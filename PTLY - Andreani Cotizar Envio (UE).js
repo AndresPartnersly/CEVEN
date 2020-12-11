@@ -46,7 +46,7 @@ function(serverWidget, currentRecord, runtime) {
 			});
 
 			custpage_cont_domicilio.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});
 
 			// CONTRATO ANDREANI ENVIO URGENTE DOMICILIO B2C
@@ -57,18 +57,18 @@ function(serverWidget, currentRecord, runtime) {
 			});
 
 			custpage_cont_domicilio_urgente.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});			
 
-			// CONTRATO ANDREANI RETIRO SUCURSAL B2C
-			let custpage_cont_ret_suc = form.addField({
-				id:'custpage_cont_ret_suc',
+			// CONTRATO ANDREANI ENVIO SUCURSAL B2C
+			let custpage_cont_env_suc = form.addField({
+				id:'custpage_cont_env_suc',
 				label:'Andreani Contrato Retiro Sucursal',
 				type: serverWidget.FieldType.TEXT
 			});
 
-			custpage_cont_ret_suc.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+			custpage_cont_env_suc.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			//CODIGO CLIENTE ANDREANI
@@ -79,12 +79,12 @@ function(serverWidget, currentRecord, runtime) {
 			});
 
 			custpage_codcliente.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
             custpage_cont_domicilio.defaultValue = dataParams.contratoEnvDomB2C;
             custpage_cont_domicilio_urgente.defaultValue = dataParams.contratoEnvUrgDomB2C;
-            custpage_cont_ret_suc.defaultValue = dataParams.contratoEnvSucB2C;
+            custpage_cont_env_suc.defaultValue = dataParams.contratoEnvSucB2C;
             custpage_codcliente.defaultValue = dataParams.codClienteB2C;
 
         }

@@ -31,17 +31,17 @@ function(currentRecord, url, dialog) {
             fieldId: 'custpage_cont_domicilio_urgente'
         });
 
-        var custpage_cont_ret_suc = record.getValue({
-            fieldId: 'custpage_cont_ret_suc'
+        var custpage_cont_env_suc = record.getValue({
+            fieldId: 'custpage_cont_env_suc'
         });
 
         var custpage_codcliente = record.getValue({
             fieldId: 'custpage_codcliente'
         });
 
-        //alert('custpage_cont_domicilio: '+custpage_cont_domicilio + 'custpage_cont_domicilio_urgente: '+custpage_cont_domicilio_urgente + 'custpage_cont_ret_suc: '+custpage_cont_ret_suc + 'custpage_codcliente: '+custpage_codcliente);
+        //alert('custpage_cont_domicilio: '+custpage_cont_domicilio + 'custpage_cont_domicilio_urgente: '+custpage_cont_domicilio_urgente + 'custpage_cont_env_suc: '+custpage_cont_env_suc + 'custpage_codcliente: '+custpage_codcliente);
 
-        if (!isEmpty(custpage_cont_ret_suc))
+        if (!isEmpty(custpage_cont_env_suc))
         {
             if (!isEmpty(custpage_cont_domicilio_urgente))
             {
@@ -65,7 +65,7 @@ function(currentRecord, url, dialog) {
                                     topPosition = (window.screen.height / 2) - ((600 / 2) + 50);
 
                                     //Define the window
-                                    var params = 'height=' + 600 + ' , width=' + 600;
+                                    var params = 'height=' + 350 + ' , width=' + 800;
                                     params += ' , left=' + leftPosition + ", top=" + topPosition;
                                     params += ' ,screenX=' + leftPosition + ' ,screenY=' + topPosition;
                                     params += ', status=no'; 
@@ -84,18 +84,18 @@ function(currentRecord, url, dialog) {
                                             returnExternalUrl: false
                                         });
 
-                                        alert('suiteletURL: '+suiteletURL);
+                                        //alert('suiteletURL: '+suiteletURL);
 
                                         if (!isEmpty(suiteletURL))
                                         {
                                             var contEnvioDomB2C = custpage_cont_domicilio;
                                             var contEnvioUrgDomB2C = custpage_cont_domicilio_urgente;
-                                            var contEnvioSucB2C = custpage_cont_ret_suc;
+                                            var contEnvioSucB2C = custpage_cont_env_suc;
                                             var codClienteAndreaniB2C = custpage_codcliente;
                                             var codPostalDestino = codigoPostal;
                                             var dirDestino = shipaddress;
                                             var finalURL = suiteletURL + '&contEnvioDomB2C=' + contEnvioDomB2C + '&contEnvioUrgDomB2C='+contEnvioUrgDomB2C + '&contEnvioSucB2C='+contEnvioSucB2C + '&codClienteAndreaniB2C='+codClienteAndreaniB2C + '&codPostalDestino='+codPostalDestino + '&dirDestino='+dirDestino;
-                                            alert('finalURL: '+finalURL);
+                                            //alert('finalURL: '+finalURL);
                                             window.open(finalURL, "Andreani Cotizar Envio", params);
                                         }
                                         else
