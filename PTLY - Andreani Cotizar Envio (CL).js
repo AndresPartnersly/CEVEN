@@ -16,6 +16,7 @@ function(currentRecord, url, dialog) {
         var title = 'Mensaje';
 
         var record = currentRecord.get();
+
         var codigoPostal = record.getValue({
             fieldId: 'custbody_ptly_codigo_postal_ship'
         });
@@ -60,62 +61,66 @@ function(currentRecord, url, dialog) {
                             
                                 if (cantArticulos > 0)
                                 {
-                                    var leftPosition, topPosition;
-                                    leftPosition = (window.screen.width / 2) - ((600 / 2) + 10);
-                                    topPosition = (window.screen.height / 2) - ((600 / 2) + 50);
-
-                                    //Define the window
-                                    var params = 'height=' + 350 + ' , width=' + 800;
-                                    params += ' , left=' + leftPosition + ", top=" + topPosition;
-                                    params += ' ,screenX=' + leftPosition + ' ,screenY=' + topPosition;
-                                    params += ', status=no'; 
-                                    params += ' ,toolbar=no';
-                                    params += ' ,menubar=no';
-                                    params += ', resizable=yes'; 
-                                    params += ' ,scrollbars=no';
-                                    params += ' ,location=no';
-                                    params += ' ,directories=no'
-
-                                    try
+                                    for (var i=0; i < cantArticulos; i++)
                                     {
-                                        var suiteletURL = url.resolveScript({
-                                            scriptId: 'customscript_ptly_cotizador_andreani_sl',
-                                            deploymentId: 'customdeploy_ptly_cotizador_andreani_sl',
-                                            returnExternalUrl: false
-                                        });
+                                        
+                                        var leftPosition, topPosition;
+                                        leftPosition = (window.screen.width / 2) - ((600 / 2) + 10);
+                                        topPosition = (window.screen.height / 2) - ((600 / 2) + 50);
 
-                                        //alert('suiteletURL: '+suiteletURL);
+                                        //Define the window
+                                        var params = 'height=' + 350 + ' , width=' + 800;
+                                        params += ' , left=' + leftPosition + ", top=" + topPosition;
+                                        params += ' ,screenX=' + leftPosition + ' ,screenY=' + topPosition;
+                                        params += ', status=no'; 
+                                        params += ' ,toolbar=no';
+                                        params += ' ,menubar=no';
+                                        params += ', resizable=yes'; 
+                                        params += ' ,scrollbars=no';
+                                        params += ' ,location=no';
+                                        params += ' ,directories=no'
 
-                                        if (!isEmpty(suiteletURL))
+                                        try
                                         {
-                                            var contEnvioDomB2C = custpage_cont_domicilio;
-                                            var contEnvioUrgDomB2C = custpage_cont_domicilio_urgente;
-                                            var contEnvioSucB2C = custpage_cont_env_suc;
-                                            var codClienteAndreaniB2C = custpage_codcliente;
-                                            var codPostalDestino = codigoPostal;
-                                            var dirDestino = shipaddress;
-                                            var finalURL = suiteletURL + '&contEnvioDomB2C=' + contEnvioDomB2C + '&contEnvioUrgDomB2C='+contEnvioUrgDomB2C + '&contEnvioSucB2C='+contEnvioSucB2C + '&codClienteAndreaniB2C='+codClienteAndreaniB2C + '&codPostalDestino='+codPostalDestino + '&dirDestino='+dirDestino;
-                                            //alert('finalURL: '+finalURL);
-                                            window.open(finalURL, "Andreani Cotizar Envio", params);
+                                            var suiteletURL = url.resolveScript({
+                                                scriptId: 'customscript_ptly_cotizador_andreani_sl',
+                                                deploymentId: 'customdeploy_ptly_cotizador_andreani_sl',
+                                                returnExternalUrl: false
+                                            });
+
+                                            //alert('suiteletURL: '+suiteletURL);
+
+                                            if (!isEmpty(suiteletURL))
+                                            {
+                                                var contEnvioDomB2C = custpage_cont_domicilio;
+                                                var contEnvioUrgDomB2C = custpage_cont_domicilio_urgente;
+                                                var contEnvioSucB2C = custpage_cont_env_suc;
+                                                var codClienteAndreaniB2C = custpage_codcliente;
+                                                var codPostalDestino = codigoPostal;
+                                                var dirDestino = shipaddress;
+                                                var finalURL = suiteletURL + '&contEnvioDomB2C=' + contEnvioDomB2C + '&contEnvioUrgDomB2C='+contEnvioUrgDomB2C + '&contEnvioSucB2C='+contEnvioSucB2C + '&codClienteAndreaniB2C='+codClienteAndreaniB2C + '&codPostalDestino='+codPostalDestino + '&dirDestino='+dirDestino;
+                                                //alert('finalURL: '+finalURL);
+                                                window.open(finalURL, "Andreani Cotizar Envio", params);
+                                            }
+                                            else
+                                            {
+                                                var message = {
+                                                    title: title,
+                                                    message: "Error obteniendo URL del Suitelet"
+                                                };
+                                                
+                                                dialog.alert(message);
+                                            }
                                         }
-                                        else
+                                        catch(e)
                                         {
                                             var message = {
                                                 title: title,
-                                                message: "Error obteniendo URL del Suitelet"
+                                                message: "Excepción general en el proceso - Detalles: "+ JSON.stringify(e)
                                             };
                                             
                                             dialog.alert(message);
                                         }
-                                    }
-                                    catch(e)
-                                    {
-                                        var message = {
-                                            title: title,
-                                            message: "Excepción general en el proceso - Detalles: "+ JSON.stringify(e)
-                                        };
-                                        
-                                        dialog.alert(message);
                                     }
                                 }
                                 else
