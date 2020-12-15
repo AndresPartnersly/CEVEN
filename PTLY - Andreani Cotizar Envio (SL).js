@@ -90,6 +90,77 @@ function(serverWidget, https, runtime) {
 			if (!isEmpty(context.request.parameters.contEnvioSucB2C))
 				custpage_cont_env_suc.defaultValue = context.request.parameters.contEnvioSucB2C;
 
+			// ME ANDREANI ENVIO DOMICILIO
+			let custpage_me_env_dom = form.addField({
+				id:'custpage_me_env_dom',
+				label:'Shipping Item ID Envio Domicilio',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_inicio'
+			});
+
+			custpage_me_env_dom.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});	
+
+			if (!isEmpty(context.request.parameters.meEnvioDomicilio))
+				custpage_me_env_dom.defaultValue = context.request.parameters.meEnvioDomicilio;
+
+			// ME ANDREANI ENVIO URGENTE DOMICILIO
+			let custpage_me_env_urg_dom = form.addField({
+				id:'custpage_me_env_urg_dom',
+				label:'Shipping Item ID Envio Urgente Domicilio',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_inicio'
+			});
+
+			custpage_me_env_urg_dom.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});	
+
+			if (!isEmpty(context.request.parameters.meEnvioUrgDomicilio))
+				custpage_me_env_urg_dom.defaultValue = context.request.parameters.meEnvioUrgDomicilio;
+
+			// ME ANDREANI ENVIO SUCURSAL
+			let custpage_me_env_suc = form.addField({
+				id:'custpage_me_env_suc',
+				label:'Shipping Item ID Envio Sucursal',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_inicio'
+			});
+
+			custpage_me_env_suc.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});	
+
+			if (!isEmpty(context.request.parameters.meEnvioSuc))
+			custpage_me_env_suc.defaultValue = context.request.parameters.meEnvioSuc;
+
+			//PESO DECLARADO
+			let custpage_peso = form.addField({
+				id:'custpage_peso',
+				label:'Peso Declarado (Kilogramos)',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_inicio'
+			});
+
+			custpage_peso.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});
+
+			if (!isEmpty(context.request.parameters.dirDestino))
+				custpage_peso.defaultValue = context.request.parameters.pesoDeclarado;
+
+			//VOLUMEN DECLARADO
+			let custpage_volumen = form.addField({
+				id:'custpage_volumen',
+				label:'Volumen Declarado',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_inicio'
+			});
+
+			custpage_volumen.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});
 
 			//DIRECCION DESTINO
 			let custpage_direccion = form.addField({
@@ -121,36 +192,6 @@ function(serverWidget, https, runtime) {
 			if (!isEmpty(context.request.parameters.codPostalDestino))
 				custpage_codpostal.defaultValue = context.request.parameters.codPostalDestino;
 
-			//PESO DECLARADO
-			let custpage_peso = form.addField({
-				id:'custpage_peso',
-				label:'Peso Declarado',
-				type: serverWidget.FieldType.TEXT,
-				container: 'fg_inicio'
-			});
-
-			custpage_peso.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
-			});
-
-			/*if (!isEmpty(context.request.parameters.dirDestino))
-				custpage_peso.defaultValue = context.request.parameters.dirDestino;*/
-
-			//VOLUMEN DECLARADO
-			let custpage_volumen = form.addField({
-				id:'custpage_volumen',
-				label:'Volumen Declarado',
-				type: serverWidget.FieldType.TEXT,
-				container: 'fg_inicio'
-			});
-
-			custpage_volumen.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
-			});
-
-			/*if (!isEmpty(context.request.parameters.dirDestino))
-				custpage_volumen.defaultValue = context.request.parameters.dirDestino;*/
-
 			form.addSubmitButton({
 				label: 'Cotizar'
 			});
@@ -164,7 +205,7 @@ function(serverWidget, https, runtime) {
 		{
 			log.debug({
 				title: proceso,
-				details: `context.request.parameters: ${JSON.stringify(context.request.parameters)}`
+				details: `211 - context.request.parameters: ${JSON.stringify(context.request.parameters)}`
 			});
 
 			let arrayResumen = [];
@@ -174,12 +215,24 @@ function(serverWidget, https, runtime) {
 					hideNavBar: true
 				});
 
+			form.clientScriptModulePath = './PTLY - Andreani Cotizar Envio (CL).js';
+
 			form.addFieldGroup({
 				id : 'fg_inicio',
 				label : 'Resultado cotización'
 			});
 
-            var custpage_resumen = form.addField({
+			form.addFieldGroup({
+				id : 'fg_fin',
+				label : 'Seleccione servicio'
+			});
+
+			form.addFieldGroup({
+				id : 'fg_parametros',
+				label : 'Parametros'
+			});
+
+            let custpage_resumen = form.addField({
                 id: 'custpage_resumen',
                 type: serverWidget.FieldType.INLINEHTML,
                 label: 'Cotización por tipo de servicio',
@@ -190,15 +243,21 @@ function(serverWidget, https, runtime) {
                 displayType: serverWidget.FieldDisplayType.INLINE
 			});
 
-			form.addFieldGroup({
-				id : 'fg_fin',
-				label : 'Seleccione servicio'
+            let custpage_resumen_json = form.addField({
+                id: 'custpage_resumen_json',
+                type: serverWidget.FieldType.TEXTAREA,
+                label: 'Cotización por tipo de servicio JSON',
+				container: 'fg_parametros'
+            });
+
+			custpage_resumen_json.updateDisplayType({
+                displayType: serverWidget.FieldDisplayType.HIDDEN
 			});
 			
 			form.addButton({
 				id: 'custpage_procesar',
 				label: 'Finalizar',
-				functionName: ''
+				functionName: `finalizarPopUp()`
 			});
 
 			form.addField({
@@ -225,7 +284,55 @@ function(serverWidget, https, runtime) {
 				container: 'fg_fin'
 			});
 
-			//form.getField('custpage_radio', 'a').setMandatory(true);
+			/*// ME ANDREANI ENVIO DOMICILIO
+			let custpage_me_env_dom = form.addField({
+				id:'custpage_me_env_dom',
+				label:'Shipping Item ID Envio Domicilio',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_parametros'
+			});
+
+			custpage_me_env_dom.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			if (!isEmpty(context.request.parameters.custpage_me_env_dom))
+				custpage_me_env_dom.defaultValue = context.request.parameters.custpage_me_env_dom;
+
+			// ME ANDREANI ENVIO URGENTE DOMICILIO
+			let custpage_me_env_urg_dom = form.addField({
+				id:'custpage_me_env_urg_dom',
+				label:'Shipping Item ID Envio Urgente Domicilio',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_parametros'
+			});
+
+			custpage_me_env_urg_dom.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			if (!isEmpty(context.request.parameters.custpage_me_env_urg_dom))
+				custpage_me_env_urg_dom.defaultValue = context.request.parameters.custpage_me_env_urg_dom;
+
+			// ME ANDREANI ENVIO SUCURSAL
+			let custpage_me_env_suc = form.addField({
+				id:'custpage_me_env_suc',
+				label:'Shipping Item ID Envio Sucursal',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_parametros'
+			});
+
+			custpage_me_env_suc.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			if (!isEmpty(context.request.parameters.custpage_me_env_suc))
+				custpage_me_env_suc.defaultValue = context.request.parameters.custpage_me_env_suc;*/
+
+			log.debug({
+				title: proceso,
+				details: `context.request.parameters.custpage_radio: ${context.request.parameters.custpage_radio}`
+			});
 
 			//SE GENERA TOKEN
 			let token = generarToken();
@@ -236,7 +343,7 @@ function(serverWidget, https, runtime) {
 				let contratoEnvioDomicilioB2C = context.request.parameters.custpage_cont_domicilio;
 				let contratoEnvioUrgDomicilioB2C = context.request.parameters.custpage_cont_domicilio_urgente;
 				let contratoEnvioSucB2C = context.request.parameters.custpage_cont_env_suc;
-				let kilos = 8;
+				let kilos = context.request.parameters.custpage_peso;
 				let volumen = 100;
 				let sucursalOrigen = 'NDJ';
 				let url = `https://api.andreani.com/v1/tarifas`;
@@ -257,6 +364,7 @@ function(serverWidget, https, runtime) {
 						let body = JSON.parse(respEnvioDomicilio.body);
 						let objeto = {};
 						objeto.tipoEnvio = 1;
+						objeto.meEnvio = context.request.parameters.custpage_me_env_dom;
 						objeto.tipoEnvioNombre = 'Envio a domicilio';
 						objeto.body = body;
 						arrayResumen.push(objeto);
@@ -279,6 +387,7 @@ function(serverWidget, https, runtime) {
 						let body = JSON.parse(respEnvioUrgDomicilio.body);
 						let objeto = {};
 						objeto.tipoEnvio = 2;
+						objeto.meEnvio = context.request.parameters.custpage_me_env_urg_dom;
 						objeto.tipoEnvioNombre = 'Envio urgente a domicilio';
 						objeto.body = body;
 						arrayResumen.push(objeto);
@@ -301,6 +410,7 @@ function(serverWidget, https, runtime) {
 						let body = JSON.parse(respEnvioSucgDomicilio.body);
 						let objeto = {};
 						objeto.tipoEnvio = 3;
+						objeto.meEnvio = context.request.parameters.custpage_me_env_suc;
 						objeto.tipoEnvioNombre = 'Envio a sucursal';
 						objeto.body = body;
 						arrayResumen.push(objeto);	
@@ -315,7 +425,7 @@ function(serverWidget, https, runtime) {
 
 			if (!isEmpty(arrayResumen))
 			{
-				var tablehtml = '<table style="width: 50vw; padding: 0px 0px 25px 20px"><thead>';
+				let tablehtml = '<table style="width: 50vw; padding: 0px 0px 25px 20px"><thead>';
 				tablehtml += '<tr style="background-color: #e9e8e8;color: #666; font-size: 11px;">';
 				tablehtml += '<th style="padding: 6px 15px !important;">TIPO SERVICIO</th>';
 				tablehtml += '<th style="padding: 6px 15px !important;">IMPORTE</th>';
@@ -323,7 +433,7 @@ function(serverWidget, https, runtime) {
 
 				if(arrayResumen.length > 0){
 					// Populate Table
-					for (var i = 0; i < arrayResumen.length; i++) {
+					for (let i = 0; i < arrayResumen.length; i++) {
 						tablehtml += '<tr style="font-size:13px; color: #333">';
 						tablehtml += '<td>' + arrayResumen[i].tipoEnvioNombre + '</td>';
 						tablehtml += '<td>' + arrayResumen[i].body.tarifaSinIva.total + '</td>';
@@ -332,6 +442,7 @@ function(serverWidget, https, runtime) {
 				}
 				tablehtml += '</tbody></table>';
 				custpage_resumen.defaultValue = tablehtml;
+				custpage_resumen_json.defaultValue = JSON.stringify(arrayResumen);
 			}
 
 			context.response.writePage(form);
@@ -485,7 +596,7 @@ function(serverWidget, https, runtime) {
         }
 
         return false;
-    }
+	}
 
     return {
         onRequest: onRequest

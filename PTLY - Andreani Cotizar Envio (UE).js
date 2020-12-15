@@ -20,7 +20,7 @@ function(serverWidget, currentRecord, runtime) {
 
         const proceso = 'Andreani Cotizar Envio - beforeLoad';
 
-        log.debug(proceso, 'INICIO');
+        log.audit(proceso, 'INICIO');
 
         const dataParams = getParams();
 
@@ -38,55 +38,18 @@ function(serverWidget, currentRecord, runtime) {
                 functionName: 'callPopUp()'
             });
 
-			// CONTRATO ANDREANI ENVIO DOMICILIO B2C
-			let custpage_cont_domicilio = form.addField({
-				id:'custpage_cont_domicilio',
-				label:'Andreani Contrato Envio Domicilio',
-				type: serverWidget.FieldType.TEXT
-			});
-
-			custpage_cont_domicilio.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.HIDDEN
-			});
-
-			// CONTRATO ANDREANI ENVIO URGENTE DOMICILIO B2C
-			let custpage_cont_domicilio_urgente = form.addField({
-				id:'custpage_cont_domicilio_urgente',
-				label:'Andreani Contrato Envio Domicilio Urgente',
-				type: serverWidget.FieldType.TEXT
-			});
-
-			custpage_cont_domicilio_urgente.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.HIDDEN
-			});			
-
-			// CONTRATO ANDREANI ENVIO SUCURSAL B2C
-			let custpage_cont_env_suc = form.addField({
-				id:'custpage_cont_env_suc',
-				label:'Andreani Contrato Retiro Sucursal',
-				type: serverWidget.FieldType.TEXT
-			});
-
-			custpage_cont_env_suc.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.HIDDEN
-			});	
-
 			//CODIGO CLIENTE ANDREANI
-			let custpage_codcliente = form.addField({
-				id:'custpage_codcliente',
-				label:'Andreani Codigo Cliente',
+			let custpage_empresaTransporte = form.addField({
+				id:'custpage_empresatransporte',
+				label:'Andreani Empresa Transportista',
 				type: serverWidget.FieldType.TEXT
 			});
 
-			custpage_codcliente.updateDisplayType({
+			custpage_empresaTransporte.updateDisplayType({
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
-            custpage_cont_domicilio.defaultValue = dataParams.contratoEnvDomB2C;
-            custpage_cont_domicilio_urgente.defaultValue = dataParams.contratoEnvUrgDomB2C;
-            custpage_cont_env_suc.defaultValue = dataParams.contratoEnvSucB2C;
-            custpage_codcliente.defaultValue = dataParams.codClienteB2C;
-
+            custpage_empresaTransporte.defaultValue = dataParams.empresaTransporte;
         }
         log.audit(proceso, 'FIN');
     }
@@ -123,10 +86,7 @@ function(serverWidget, currentRecord, runtime) {
         
         try {
             var currScript = runtime.getCurrentScript();
-            response.codClienteB2C = currScript.getParameter('custscript_ptly_cotizador_ue_cod_cli_b2c');
-            response.contratoEnvDomB2C = currScript.getParameter('custscript_ptly_cotizador_ue_cont_dom');
-            response.contratoEnvUrgDomB2C = currScript.getParameter('custscript_ptly_cotizador_ue_cont_ur_dom');
-            response.contratoEnvSucB2C = currScript.getParameter('custscript_ptly_cotizador_ue_cont_envsuc');
+            response.empresaTransporte = currScript.getParameter('custscript_ptly_cotizador_ue_empresa_b2c');
         } catch (e) {
             response.error = true;
             response.mensaje = "Netsuite Error - Excepción: " + e.message;
