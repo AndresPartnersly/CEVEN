@@ -284,51 +284,6 @@ function(serverWidget, https, runtime) {
 				container: 'fg_fin'
 			});
 
-			/*// ME ANDREANI ENVIO DOMICILIO
-			let custpage_me_env_dom = form.addField({
-				id:'custpage_me_env_dom',
-				label:'Shipping Item ID Envio Domicilio',
-				type: serverWidget.FieldType.TEXT,
-				container: 'fg_parametros'
-			});
-
-			custpage_me_env_dom.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
-			});	
-
-			if (!isEmpty(context.request.parameters.custpage_me_env_dom))
-				custpage_me_env_dom.defaultValue = context.request.parameters.custpage_me_env_dom;
-
-			// ME ANDREANI ENVIO URGENTE DOMICILIO
-			let custpage_me_env_urg_dom = form.addField({
-				id:'custpage_me_env_urg_dom',
-				label:'Shipping Item ID Envio Urgente Domicilio',
-				type: serverWidget.FieldType.TEXT,
-				container: 'fg_parametros'
-			});
-
-			custpage_me_env_urg_dom.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
-			});	
-
-			if (!isEmpty(context.request.parameters.custpage_me_env_urg_dom))
-				custpage_me_env_urg_dom.defaultValue = context.request.parameters.custpage_me_env_urg_dom;
-
-			// ME ANDREANI ENVIO SUCURSAL
-			let custpage_me_env_suc = form.addField({
-				id:'custpage_me_env_suc',
-				label:'Shipping Item ID Envio Sucursal',
-				type: serverWidget.FieldType.TEXT,
-				container: 'fg_parametros'
-			});
-
-			custpage_me_env_suc.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
-			});	
-
-			if (!isEmpty(context.request.parameters.custpage_me_env_suc))
-				custpage_me_env_suc.defaultValue = context.request.parameters.custpage_me_env_suc;*/
-
 			log.debug({
 				title: proceso,
 				details: `context.request.parameters.custpage_radio: ${context.request.parameters.custpage_radio}`

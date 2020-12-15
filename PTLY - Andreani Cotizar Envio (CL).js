@@ -38,7 +38,7 @@ function(currentRecord, url, dialog, query) {
                 if (!isEmpty(subsidiaria))
                 {
                     var codigoPostal = record.getValue({
-                        fieldId: 'custbody_ptly_codigo_postal_ship'
+                        fieldId: 'shipzip'
                     });
 
                     var shipaddress =  record.getValue({
