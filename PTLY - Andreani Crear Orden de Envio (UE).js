@@ -1,11 +1,12 @@
 /**
  * @NApiVersion 2.1
+ * @NAmdConfig /SuiteScripts/configuration.json
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/query'],
+define(['N/query', 'PTLY/AndreaniUtilities', 'N/https', 'N/search'],
 
-function(query) {
+function(query, utilities, https, search) {
    
     /**
      * Function definition to be triggered before record is loaded.
@@ -21,6 +22,13 @@ function(query) {
         const proceso = 'Andreani Crear Orden de Envio - beforeLoad';
 
         log.audit(proceso, 'INICIO');
+
+        let token = utilities.generarToken('https://api.qa.andreani.com/login');
+
+        log.debug({
+            title: proceso,
+            details: `token: ${JSON.stringify(token)}`
+        });
 
         /*const dataParams = getParams();
 
@@ -140,29 +148,63 @@ function(query) {
             {
                 // DATOS ORIGEN
                 let localidadOrigen =  arrResults[0].state;
-
                 let codigoPostalOrigen =  arrResults[0].zipcode;
-
                 let calleOrigen =   arrResults[0].addressaddr1;
-
                 let numeroOrigen =  arrResults[0].addressaddr1;
 
                 // DATOS DESTINO
-                let localidadDestino =  newRecord.getValue({
-                    fieldId: 'shipstate'
+                let localidadDestino;
+                let codigoPostalDestino;
+                let calleDestino;
+                let numeroDestino;
+
+                // DATOS DESTINATARIO
+                let nombreCompletoDestinatario;
+                let eMailDestinatario;
+                let documentoTipoDestinatario;
+                let documentoNumeroDestinatario;;
+
+                let createdFromId =  newRecord.getValue({
+                    fieldId: 'createdfrom'
                 });
 
-                let codigoPostalDestino =  newRecord.getValue({
-                    fieldId: 'shipzip'
+                log.debug({
+                    title: proceso,
+                    details: `LINE 166 - createdFromId: ${createdFromId}`
                 });
 
-                let calleDestino =  newRecord.getValue({
-                    fieldId: 'shipaddress'
+                let ssDirOrigen = search.load({
+                    id: 'customsearch_ptly_so_andreani',
+                    type: search.Type.TRANSACTION
+                })
+
+                // Filtro subsidiaria
+                var ssIdFilter = search.createFilter({
+                    name: 'internalid',
+                    operator: search.Operator.IS,
+                    values: createdFromId
                 });
-                
-                let numeroDestino =  newRecord.getValue({
-                    fieldId: 'shipaddress'
-                });
+                ssDirOrigen.filters.push(ssIdFilter);
+
+                var ssDirOrigenRun = ssDirOrigen.run();
+                var ssDirOrigenRunRange = ssDirOrigenRun.getRange({
+                    start: 0,
+                    end: 1000
+                }); 
+
+                log.debug(proceso, "LINE 188 - ssDirOrigenRunRange.length: "+ ssDirOrigenRunRange.length);
+
+                for (var j = 0; j < ssDirOrigenRunRange.length; j++)
+                {
+                    localidadDestino = ssDirOrigenRunRange[j].getValue(ssDirOrigenRun.columns[4]);
+                    codigoPostalDestino = ssDirOrigenRunRange[j].getValue(ssDirOrigenRun.columns[5]);
+                    calleDestino = ssDirOrigenRunRange[j].getValue(ssDirOrigenRun.columns[2]);
+                    numeroDestino = ssDirOrigenRunRange[j].getValue(ssDirOrigenRun.columns[2]);
+                    nombreCompletoDestinatario = ssDirOrigenRunRange[j].getValue(ssDirOrigenRun.columns[7]);
+                    eMailDestinatario = ssDirOrigenRunRange[j].getValue(ssDirOrigenRun.columns[8]);
+                    documentoTipoDestinatario = ssDirOrigenRunRange[j].getValue(ssDirOrigenRun.columns[9]);
+                    documentoNumeroDestinatario = ssDirOrigenRunRange[j].getValue(ssDirOrigenRun.columns[10]);
+                }
 
                 let bodyRequest = {};
                 bodyRequest.contrato = contrato;
@@ -180,11 +222,62 @@ function(query) {
                 bodyRequest.destino.postal.localidad = localidadDestino;
                 bodyRequest.destino.postal.calle = calleDestino;
                 bodyRequest.destino.postal.numero = numeroDestino.replace(expReg,'');
+
+                bodyRequest.remitente = {};
+                bodyRequest.remitente.nombreCompleto = 'CEVEN SA';
+                bodyRequest.remitente.eMail = 'andres.brito@partnersly.com';
+                bodyRequest.remitente.documentoTipo = 'CUIT';
+                bodyRequest.remitente.documentoNumero = '30696692951';
+
+                bodyRequest.destinatario = [];
+                let destinatarioObjet = {};
+                destinatarioObjet.nombreCompleto = nombreCompletoDestinatario;
+                destinatarioObjet.eMail = eMailDestinatario;
+                destinatarioObjet.documentoTipo = documentoTipoDestinatario;
+                destinatarioObjet.documentoNumero = documentoNumeroDestinatario;
+                bodyRequest.destinatario.push(destinatarioObjet);
+
+                bodyRequest.bultos = [];
+                let bultosObjet = {};
+                bultosObjet.kilos = 10;
+                bultosObjet.volumenCm = 1000;
+
+                bodyRequest.bultos.push(bultosObjet);
                 
                 log.debug({
                     title: proceso,
                     details: `bodyRequest: ${JSON.stringify(bodyRequest)}`
                 });
+
+                let url = `https://api.qa.andreani.com/v2/ordenes-de-envio`;
+                let token = generarToken2();
+
+                log.debug({
+                    title: proceso,
+                    details: `LINE 223 - token: ${token}`
+                });
+
+				let respCrearOE = crearOrdenEnvio(url, token, bodyRequest);
+
+				if (!isEmpty(respCrearOE))
+				{
+					log.debug({
+						title: proceso,
+						details: JSON.stringify(respCrearOE.body)
+					});
+
+					if (respCrearOE.code == 200)
+					{
+						/*let body = JSON.parse(respEnvioDomicilio.body);
+						let objeto = {};
+						objeto.tipoEnvio = 1;
+						objeto.meEnvio = context.request.parameters.custpage_me_env_dom;
+						objeto.tipoEnvioNombre = 'Envio a domicilio';
+						objeto.body = body;
+						arrayResumen.push(objeto);*/
+					}
+				}
+
                 
             }
         }
@@ -248,10 +341,128 @@ function(query) {
         }
 
         return false;
+    }
+
+	let generarToken2 = () => {
+
+		let XAuthorizationToken = ``;
+
+		let headers = {'Authorization': 'Basic Y2V2ZW5fd3M6U0NKS0w0MjEyMGR3'};
+		let response = https.get({
+			url: 'https://api.qa.andreani.com/login',
+			headers: headers
+		});
+
+		log.debug({
+			title: 'LINE 169',
+			details: JSON.stringify(response)
+		})
+
+		if (!isEmpty(response))
+		{
+			if (response.code == 200)
+			{
+				XAuthorizationToken = response.headers["X-Authorization-token"];
+				
+			}
+			else
+			{
+				log.error({
+					title: proceso,
+					details: `generarToken - Error al generar token, codigo de error: ${response.code}`
+				});
+			}
+		}
+		else
+		{
+			log.error({
+				title: proceso,
+				details: `generarToken - Response vacio`
+			});
+
+			return XAuthorizationToken;
+		}
+
+		return XAuthorizationToken;
+	}
+    
+	let crearOrdenEnvio = (urlReq, tokenReq, bodyReq) => {
+
+		if (!isEmpty(urlReq))
+		{
+			if (!isEmpty(tokenReq))
+			{
+				log.debug({
+					title: 'crearOrdenEnvio',
+					details: `url: ${urlReq} - token: ${tokenReq} - body: ${JSON.stringify(bodyReq)}`
+				});
+
+				let responseObj = {};
+                let headers = {
+                    'content-type': 'application/json',
+                    'x-authorization-token': `${tokenReq}`
+                };
+
+				let response = https.post({
+					url: urlReq,
+                    headers: headers,
+                    body: JSON.stringify(bodyReq)
+                });
+
+				log.debug({
+					title: 'crearOrdenEnvio',
+					details: `LINE 336 - response: ${JSON.stringify(response)}`
+				});
+
+				if (!isEmpty(response))
+				{
+					if (response.code == 200)
+					{                      
+                        let body = JSON.parse(response.body);
+                        log.debug({
+                            title: 'crearOrdenEnvio',
+                            details: `LINE 336 - response.body: ${response.body}`
+                        });
+					}
+					else
+					{
+						log.error({
+							title: 'crearOrdenEnvio',
+							details: `crearOrdenEnvio - Error al invocar servicio, codigo de error: ${response.code}`
+						});
+					}
+				}
+				else
+				{
+					log.error({
+						title: 'crearOrdenEnvio',
+						details: `crearOrdenEnvio - Response vacio`
+					});
+
+					return responseObj;
+				}
+
+				return responseObj;
+			}
+			else
+			{
+				log.error({
+					title: 'crearOrdenEnvio',
+					details: `crearOrdenEnvio - No se recibio el parametro: Token`
+				});
+			}
+		}
+		else
+		{
+			log.error({
+				title: 'crearOrdenEnvio',
+				details: `crearOrdenEnvio - No se recibio el parametro: URL`
+			});
+		}
 	}
 
     return {
-        //beforeLoad: beforeLoad/*,
+        //beforeLoad: beforeLoad,
         beforeSubmit: beforeSubmit
         //afterSubmit: afterSubmit*/
     };

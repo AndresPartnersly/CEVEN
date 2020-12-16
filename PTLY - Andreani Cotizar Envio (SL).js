@@ -417,11 +417,6 @@ function(serverWidget, https, runtime) {
 
 		let XAuthorizationToken = ``;
 
-		let headerObj = {
-			name: 'Authorization',
-			value: 'Basic Y2V2ZW5fd3M6U0NKS0w0MjEyMGR3'
-		};
-
 		let headers = {'Authorization': 'Basic Y2V2ZW5fd3M6U0NKS0w0MjEyMGR3'};
 		let response = https.get({
 			url: 'https://api.qa.andreani.com/login',
