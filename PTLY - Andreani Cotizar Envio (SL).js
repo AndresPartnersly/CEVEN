@@ -1,9 +1,9 @@
 /** @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/ui/serverWidget', 'N/https', 'N/runtime'],
+define(['N/ui/serverWidget', 'N/https', 'N/runtime', 'N/query'],
 
-function(serverWidget, https, runtime) {
+function(serverWidget, https, runtime, query) {
 
 	const proceso = 'Andreani Cotizar Envio - Suitelet';
 	const title = 'Andreani - Cotizar Envío';
@@ -25,7 +25,17 @@ function(serverWidget, https, runtime) {
 
 			form.addFieldGroup({
 				id : 'fg_inicio',
-				label : 'Datos a cotizar'
+				label : 'Mercaderia'
+			});
+
+			form.addFieldGroup({
+				id : 'fg_destino',
+				label : 'Destino a domicilio'
+			});
+
+			form.addFieldGroup({
+				id : 'fg_destino_andreani',
+				label : 'Destino a sucursal Andreani'
 			});
 
 			form.clientScriptModulePath = './PTLY - Andreani Cotizar Envio (CL).js';
@@ -167,7 +177,7 @@ function(serverWidget, https, runtime) {
 				id:'custpage_direccion',
 				label:'Dirección',
 				type: serverWidget.FieldType.TEXTAREA,
-				container: 'fg_inicio'
+				container: 'fg_destino'
 			});
 
 			custpage_direccion.updateDisplayType({
@@ -182,7 +192,7 @@ function(serverWidget, https, runtime) {
 				id:'custpage_codpostal',
 				label:'Codigo Postal',
 				type: serverWidget.FieldType.TEXT,
-				container: 'fg_inicio'
+				container: 'fg_destino'
 			});
 
 			custpage_codpostal.updateDisplayType({
@@ -191,6 +201,93 @@ function(serverWidget, https, runtime) {
 
 			if (!isEmpty(context.request.parameters.codPostalDestino))
 				custpage_codpostal.defaultValue = context.request.parameters.codPostalDestino;
+
+			//SUCURSAL ANDREANI
+			let custpage_sucandreani = form.addField({
+				id:'custpage_sucandreani',
+				label:'Sucursal',
+				type: serverWidget.FieldType.SELECT,
+				source: 'customrecord_ptly_suc_andreani',
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.NORMAL
+			});	
+
+			custpage_sucandreani.isMandatory = true;
+
+			//SUCURSAL ANDREANI DESCRIPCION
+			let custpage_sucandreani_des = form.addField({
+				id:'custpage_sucandreani_des',
+				label:'Dirección',
+				type: serverWidget.FieldType.TEXTAREA,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_des.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});
+
+			//CODIGO SUCURSAL ANDREANI
+			let custpage_sucandreani_cod = form.addField({
+				id:'custpage_sucandreani_cod',
+				label:'Codigo Postal',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_cod.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			//CALLE SUCURSAL ANDREANI
+			let custpage_sucandreani_calle = form.addField({
+				id:'custpage_sucandreani_calle',
+				label:'Calle',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_calle.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			//CALLE NRO SUCURSAL ANDREANI
+			let custpage_sucandreani_calle_nro = form.addField({
+				id:'custpage_sucandreani_calle_nro',
+				label:'Calle Numero',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_calle_nro.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			//LOCALIDAD SUCURSAL ANDREANI
+			let custpage_sucandreani_loc = form.addField({
+				id:'custpage_sucandreani_loc',
+				label:'Localidad',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_loc.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			//REGION SUCURSAL ANDREANI
+			let custpage_sucandreani_reg = form.addField({
+				id:'custpage_sucandreani_reg',
+				label:'Region',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_reg.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
 
 			form.addSubmitButton({
 				label: 'Cotizar'
@@ -253,6 +350,76 @@ function(serverWidget, https, runtime) {
 			custpage_resumen_json.updateDisplayType({
                 displayType: serverWidget.FieldDisplayType.HIDDEN
 			});
+
+			//CALLE SUCURSAL ANDREANI
+			let custpage_sucandreani_calle = form.addField({
+				id:'custpage_sucandreani_calle',
+				label:'Calle',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_calle.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			custpage_sucandreani_calle.defaultValue = context.request.parameters.custpage_sucandreani_calle;
+
+			//CALLE NRO SUCURSAL ANDREANI
+			let custpage_sucandreani_calle_nro = form.addField({
+				id:'custpage_sucandreani_calle_nro',
+				label:'Calle Numero',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_calle_nro.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			custpage_sucandreani_calle_nro.defaultValue = context.request.parameters.custpage_sucandreani_calle_nro;
+
+			//LOCALIDAD SUCURSAL ANDREANI
+			let custpage_sucandreani_loc = form.addField({
+				id:'custpage_sucandreani_loc',
+				label:'Localidad',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_loc.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			custpage_sucandreani_loc.defaultValue = context.request.parameters.custpage_sucandreani_loc;
+
+			//REGION SUCURSAL ANDREANI
+			let custpage_sucandreani_reg = form.addField({
+				id:'custpage_sucandreani_reg',
+				label:'Region',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_sucandreani_reg.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});	
+
+			custpage_sucandreani_reg.defaultValue = context.request.parameters.custpage_sucandreani_reg;
+
+			//CODIGO POSTAL DESTINO
+			let custpage_codpostal = form.addField({
+				id:'custpage_codpostal',
+				label:'Codigo Postal',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_codpostal.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.DISABLED
+			});
+
+			custpage_codpostal.defaultValue = context.request.parameters.custpage_codpostal;
 			
 			form.addButton({
 				id: 'custpage_procesar',
@@ -294,13 +461,19 @@ function(serverWidget, https, runtime) {
 
 			if (!isEmpty(token))
 			{
+
+				log.debug({
+					title: proceso,
+					details: `Token generado exitosamente`
+				});
+
 				let cpDestino = context.request.parameters.custpage_codpostal;
+				let cpDestinoAndreani = context.request.parameters.custpage_sucandreani_cod;
 				let contratoEnvioDomicilioB2C = context.request.parameters.custpage_cont_domicilio;
 				let contratoEnvioUrgDomicilioB2C = context.request.parameters.custpage_cont_domicilio_urgente;
 				let contratoEnvioSucB2C = context.request.parameters.custpage_cont_env_suc;
 				let kilos = context.request.parameters.custpage_peso;
 				let volumen = 100;
-				let sucursalOrigen = 'NDJ';
 				let url = `https://api.andreani.com/v1/tarifas`;
 
 				//PARAMETROS COTIZACION ENVIO A DOMICILIO B2C
@@ -311,7 +484,7 @@ function(serverWidget, https, runtime) {
 				{
 					log.debug({
 						title: proceso,
-						details: JSON.stringify(respEnvioDomicilio.body)
+						details: `Respuesta cotizacion ID 1: ${respEnvioDomicilio.body}`
 					});
 
 					if (respEnvioDomicilio.code == 200)
@@ -334,7 +507,7 @@ function(serverWidget, https, runtime) {
 				{
 					log.debug({
 						title: proceso,
-						details: JSON.stringify(respEnvioUrgDomicilio.body)
+						details: `Respuesta cotizacion ID 2: ${respEnvioUrgDomicilio.body}`
 					});
 
 					if (respEnvioDomicilio.code == 200)
@@ -350,14 +523,14 @@ function(serverWidget, https, runtime) {
 				}
 				
 				//PARAMETROS COTIZACION ENVIO A SUCURSAL B2C
-				let urlEnvioSuc = `${url}?cpDestino=${cpDestino}&contrato=${contratoEnvioSucB2C}&bultos[0][volumen]=${volumen}&bultos[0][kilos]=${kilos}&sucursalOrigen=${sucursalOrigen}`;
+				let urlEnvioSuc = `${url}?cpDestino=${cpDestinoAndreani}&contrato=${contratoEnvioSucB2C}&bultos[0][volumen]=${volumen}&bultos[0][kilos]=${kilos}`;
 				let respEnvioSucgDomicilio = cotizarEnvio(urlEnvioSuc, token);
 
 				if (!isEmpty(respEnvioSucgDomicilio))
 				{
 					log.debug({
 						title: proceso,
-						details: JSON.stringify(respEnvioSucgDomicilio.body)
+						details: `Respuesta cotizacion ID 3: ${respEnvioSucgDomicilio.body}`
 					});
 
 					if (respEnvioDomicilio.code == 200)

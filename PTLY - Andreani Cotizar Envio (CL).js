@@ -1,14 +1,133 @@
 /**
  * @NApiVersion 2.x
+ * @NAmdConfig /SuiteScripts/configuration.json
  * @NScriptType ClientScript
  */
-define(['N/currentRecord', 'N/url', 'N/ui/dialog', 'N/query'],
+define(['N/currentRecord', 'N/url', 'N/ui/dialog', 'N/query', 'N/search'],
 
-function(currentRecord, url, dialog, query) {
+function(currentRecord, url, dialog, query, search) {
     
-    function pageInit(context) {
-        
+ 
+    function fieldChanged(scriptContext) {
+
+        if(scriptContext.fieldId == 'custpage_sucandreani') {
+
+            var objRecord = scriptContext.currentRecord;
+
+            var idSucursal = objRecord.getValue({
+                fieldId: 'custpage_sucandreani'
+              });
+
+            if (!isEmpty(idSucursal))
+            {
+                var arraySucursal =  getSucData(idSucursal);
+
+                if (!isEmpty(arraySucursal) && arraySucursal.length > 0)
+                {
+                    objRecord.setValue({
+                        fieldId: 'custpage_sucandreani_des',
+                        value: arraySucursal[0].resumen
+                    });
+
+                    objRecord.setValue({
+                        fieldId: 'custpage_sucandreani_cod',
+                        value: arraySucursal[0].codigoPostal
+                    });
+
+                    objRecord.setValue({
+                        fieldId: 'custpage_sucandreani_calle',
+                        value: arraySucursal[0].calle
+                    });
+
+                    objRecord.setValue({
+                        fieldId: 'custpage_sucandreani_calle_nro',
+                        value: arraySucursal[0].calleNro
+                    });
+
+                    objRecord.setValue({
+                        fieldId: 'custpage_sucandreani_loc',
+                        value: arraySucursal[0].localidad
+                    });
+
+                    objRecord.setValue({
+                        fieldId: 'custpage_sucandreani_reg',
+                        value: arraySucursal[0].region
+                    });
+                }
+            }
+            else
+            {
+                objRecord.setValue({
+                    fieldId: 'custpage_sucandreani_des',
+                    value: ''
+                });
+
+                objRecord.setValue({
+                    fieldId: 'custpage_sucandreani_cod',
+                    value: ''
+                });
+
+                objRecord.setValue({
+                    fieldId: 'custpage_sucandreani_calle',
+                    value: ''
+                });
+
+                objRecord.setValue({
+                    fieldId: 'custpage_sucandreani_calle_nro',
+                    value: ''
+                });
+
+                objRecord.setValue({
+                    fieldId: 'custpage_sucandreani_loc',
+                    value: ''
+                });
+
+                objRecord.setValue({
+                    fieldId: 'custpage_sucandreani_reg',
+                    value: ''
+                });
+            }
+        }  
     }
+
+
+    function getSucData(id) {
+
+        var arraySS = [];
+
+        var ssSucursal = search.load({
+            id: 'customsearch_ptly_suc_andreani'
+        })
+
+        var ssIdFilter = search.createFilter({
+            name: 'internalid',
+            operator: search.Operator.IS,
+            values: id
+        });
+
+        ssSucursal.filters.push(ssIdFilter);
+
+        var ssSucursalRun = ssSucursal.run();
+        var ssSucursalRunRange = ssSucursalRun.getRange({
+            start: 0,
+            end: 1000
+        }); 
+
+        for (var j = 0; j < ssSucursalRunRange.length; j++)
+        {
+            var objeto = {};
+            objeto.resumen = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[0]);
+            objeto.codigoPostal = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[1]);
+            objeto.calle = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[2]);
+            objeto.calleNro = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[3]);
+            objeto.localidad = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[4]);
+            objeto.region = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[5]);
+            arraySS.push(objeto);
+        }
+
+        return arraySS;
+    }
+
 	
 	function callPopUp() {
 
@@ -65,8 +184,6 @@ function(currentRecord, url, dialog, query) {
                         // Map results to columns 
                         arrResults.push.apply(arrResults, objPage.asMappedResults());
                     });
-
-                    //alert('arrResults: '+JSON.stringify(arrResults)+' - arrResults.length: '+arrResults.length);
 
                     if (!isEmpty(arrResults) && arrResults.length > 0)
                     {
@@ -129,7 +246,7 @@ function(currentRecord, url, dialog, query) {
                                                         topPosition = (window.screen.height / 2) - ((600 / 2) + 50);
 
                                                         //Define the window
-                                                        var params = 'height=' + 350 + ' , width=' + 800;
+                                                        var params = 'height=' + 550 + ' , width=' + 800;
                                                         params += ' , left=' + leftPosition + ", top=" + topPosition;
                                                         params += ' ,screenX=' + leftPosition + ' ,screenY=' + topPosition;
                                                         params += ', status=no'; 
@@ -142,15 +259,15 @@ function(currentRecord, url, dialog, query) {
 
                                                         try
                                                         {
-                                                            var suiteletURL = url.resolveScript({
+                                                            var suitevarURL = url.resolveScript({
                                                                 scriptId: 'customscript_ptly_cotizador_andreani_sl',
                                                                 deploymentId: 'customdeploy_ptly_cotizador_andreani_sl',
                                                                 returnExternalUrl: false
                                                             });
 
-                                                            //alert('suiteletURL: '+suiteletURL);
+                                                            //alert('suitevarURL: '+suitevarURL);
 
-                                                            if (!isEmpty(suiteletURL))
+                                                            if (!isEmpty(suitevarURL))
                                                             {
                                                                 var contEnvioDomB2C = custpage_cont_domicilio;
                                                                 var contEnvioUrgDomB2C = custpage_cont_domicilio_urgente;
@@ -163,7 +280,7 @@ function(currentRecord, url, dialog, query) {
                                                                 var meEnvioUrgDomicilio = custpage_meenvurgdom;
                                                                 var meEnvioSuc = custpage_meenvsuc;
                                                                 
-                                                                var finalURL = suiteletURL + '&contEnvioDomB2C=' + contEnvioDomB2C + '&contEnvioUrgDomB2C='+contEnvioUrgDomB2C + '&contEnvioSucB2C='+contEnvioSucB2C + '&codClienteAndreaniB2C='+codClienteAndreaniB2C + '&codPostalDestino='+codPostalDestino + '&dirDestino='+dirDestino + '&pesoDeclarado='+pesoDeclarado+ '&meEnvioDomicilio='+meEnvioDomicilio+ '&meEnvioUrgDomicilio='+meEnvioUrgDomicilio+ '&meEnvioSuc='+meEnvioSuc;
+                                                                var finalURL = suitevarURL + '&contEnvioDomB2C=' + contEnvioDomB2C + '&contEnvioUrgDomB2C='+contEnvioUrgDomB2C + '&contEnvioSucB2C='+contEnvioSucB2C + '&codClienteAndreaniB2C='+codClienteAndreaniB2C + '&codPostalDestino='+codPostalDestino + '&dirDestino='+dirDestino + '&pesoDeclarado='+pesoDeclarado+ '&meEnvioDomicilio='+meEnvioDomicilio+ '&meEnvioUrgDomicilio='+meEnvioUrgDomicilio+ '&meEnvioSuc='+meEnvioSuc;
                                                                 //alert('finalURL: '+finalURL);
                                                                 window.open(finalURL, "Andreani Cotizar Envio", params);
                                                             }
@@ -171,7 +288,7 @@ function(currentRecord, url, dialog, query) {
                                                             {
                                                                 var message = {
                                                                     title: title,
-                                                                    message: "Error obteniendo URL del Suitelet"
+                                                                    message: "Error obteniendo URL del Suitevar"
                                                                 };
                                                                 
                                                                 dialog.alert(message);
@@ -304,8 +421,7 @@ function(currentRecord, url, dialog, query) {
         var envioId = nlapiGetFieldValue('custpage_radio');
         var custpage_resumen_json = nlapiGetFieldValue('custpage_resumen_json');
         var subtotal = parseFloat(window.opener.nlapiGetFieldValue('subtotal'),10);
-
-        //alert('subtotal: '+subtotal);
+        var exchangeRate = parseFloat(window.opener.nlapiGetFieldValue('exchangerate'),10);
 
         if (!isEmpty(envioId))
         {
@@ -319,12 +435,35 @@ function(currentRecord, url, dialog, query) {
                     {
                         //alert('Coincidencia encontrada');
                         var idShippingMethod =  arrayResumen[i].meEnvio;
-                        var shippingCost =  arrayResumen[i].body.tarifaSinIva.total;
+                        var shippingCostAux =  parseFloat(arrayResumen[i].body.tarifaSinIva.total,10);
 
-                        window.opener.nlapiSetFieldValue('shipmethod', idShippingMethod);
-                        window.opener.nlapiSetFieldValue('shippingcost', shippingCost);
-                        window.opener.nlapiSetFieldValue('custbody_ptly_valor_declarado_andreani',subtotal);
-                        window.close();
+                        if (shippingCostAux > 0)
+                        {
+                            var shippingCost = parseFloat(shippingCostAux,10) / parseFloat(exchangeRate,10);
+                            window.opener.nlapiSetFieldValue('shipmethod', idShippingMethod);
+                            window.opener.nlapiSetFieldValue('shippingcost', shippingCost);
+                            window.opener.nlapiSetFieldValue('custbody_ptly_valor_declarado_andreani',subtotal);
+
+                            if (envioId = 3)
+                            {
+                                var calle = nlapiGetFieldValue('custpage_sucandreani_calle');
+                                var calleNro = nlapiGetFieldValue('custpage_sucandreani_calle_nro');
+                                var addr1 = calle + ' ' + calleNro;
+                                var city = nlapiGetFieldValue('custpage_sucandreani_loc');
+                                var state = nlapiGetFieldValue('custpage_sucandreani_reg');
+                                var zip = nlapiGetFieldValue('custpage_codpostal');
+
+                                window.opener.nlapiSetFieldValue('shipaddress', '');
+                                window.opener.nlapiSetFieldValue('shipoverride', 'F');
+                                //window.opener.nlapiSetFieldValue('shipaddresslist', '-2');
+                                window.opener.nlapiSetFieldValue('shipaddr1', addr1);
+                                window.opener.nlapiSetFieldValue('shipcity', city);
+                                window.opener.nlapiSetFieldValue('shipstate', state);
+                                window.opener.nlapiSetFieldValue('shipzip', zip);
+                            }
+                            window.close();
+
+                        }
                     }
                 }
 			}
@@ -372,7 +511,7 @@ function(currentRecord, url, dialog, query) {
 
       
     return {
-        pageInit: pageInit,
+        fieldChanged: fieldChanged,
         callPopUp: callPopUp,
         finalizarPopUp: finalizarPopUp
     };
