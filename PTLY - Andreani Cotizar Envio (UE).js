@@ -1,11 +1,12 @@
 /**
  * @NApiVersion 2.1
+ * @NAmdConfig /SuiteScripts/configuration.json
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/ui/serverWidget', 'N/currentRecord', 'N/runtime'],
+define(['N/ui/serverWidget', 'N/query', 'N/runtime', 'PTLY/AndreaniUtilities'],
 
-function(serverWidget, currentRecord, runtime) {
+function(serverWidget, query, runtime, utilities) {
    
     /**
      * Function definition to be triggered before record is loaded.
@@ -22,11 +23,63 @@ function(serverWidget, currentRecord, runtime) {
 
         log.audit(proceso, 'INICIO');
 
+        const newRecord = scriptContext.newRecord;
+
+        const entity = newRecord.getValue({
+            fieldId: 'entity'
+        });
+
+        let validEntity = false;
+
         const dataParams = getParams();
 
-        log.debug(proceso, 'dataParams: '+JSON.stringify(dataParams));
+        log.debug(proceso, 'dataParams: '+JSON.stringify(dataParams)+' - entity: '+entity);
 
-        if (scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT || scriptContext.type == scriptContext.UserEventType.COPY)
+        if (!utilities.isEmpty(entity))
+        {
+            let strSQL = "SELECT \n Customer.\"CATEGORY\" AS categoryRAW /*{category#RAW}*/\nFROM \n Customer\nWHERE \n Customer.\"ID\" = "+ entity +"\n";
+
+            let objPagedData = query.runSuiteQLPaged({
+                query: strSQL,
+                pageSize: 1
+            });
+
+            // Paging 
+            let arrResults = [];
+            
+            objPagedData.pageRanges.forEach(function(pageRange) {
+                //fetch
+                let objPage = objPagedData.fetch({ index: pageRange.index }).data;
+                // Map results to columns 
+                arrResults.push.apply(arrResults, objPage.asMappedResults());
+            });
+
+            log.debug({
+                title: proceso,
+                details: `arrResults: ${JSON.stringify(arrResults)}`
+            })
+
+            if (!utilities.isEmpty(arrResults) && arrResults.length > 0)
+            {
+                const customerCategory = arrResults[0].categoryraw;
+
+                if (!utilities.isEmpty(dataParams.categoriaCliente) && dataParams.categoriaCliente == customerCategory)
+                {
+                    validEntity = true;
+                }
+            }
+
+            log.debug({
+                title: proceso,
+                details: `validEntity: ${validEntity}`
+            })
+        }
+        else
+        {
+            validEntity = true;
+        }
+
+        if ((scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT || scriptContext.type == scriptContext.UserEventType.COPY) && validEntity)
         {
             let form = scriptContext.form;
 
@@ -38,18 +91,31 @@ function(serverWidget, currentRecord, runtime) {
                 functionName: 'callPopUp()'
             });
 
-			//CODIGO CLIENTE ANDREANI
-			let custpage_empresaTransporte = form.addField({
-				id:'custpage_empresatransporte',
-				label:'Andreani Empresa Transportista',
-				type: serverWidget.FieldType.TEXT
-			});
+            //CODIGO CLIENTE ANDREANI
+            let custpage_empresaTransporte = form.addField({
+                id:'custpage_empresatransporte',
+                label:'Andreani Empresa Transportista',
+                type: serverWidget.FieldType.TEXT
+            });
 
-			custpage_empresaTransporte.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.HIDDEN
-			});	
+            custpage_empresaTransporte.updateDisplayType({
+                displayType: serverWidget.FieldDisplayType.HIDDEN
+            });	
 
             custpage_empresaTransporte.defaultValue = dataParams.empresaTransporte;
+
+            //CATEGORIA CLIENTE PERMITIDAD POPUP
+            let custpage_catclientepermitida = form.addField({
+                id:'custpage_catclientepermitida',
+                label:'Categoria Cliente Permitida',
+                type: serverWidget.FieldType.TEXT
+            });
+
+            custpage_catclientepermitida.updateDisplayType({
+                displayType: serverWidget.FieldDisplayType.HIDDEN
+            });	
+
+            custpage_catclientepermitida.defaultValue = dataParams.categoriaCliente;
         }
         log.audit(proceso, 'FIN');
     }
@@ -87,6 +153,7 @@ function(serverWidget, currentRecord, runtime) {
         try {
             var currScript = runtime.getCurrentScript();
             response.empresaTransporte = currScript.getParameter('custscript_ptly_cotizador_ue_empresa_b2c');
+            response.categoriaCliente = currScript.getParameter('custscript_ptly_cotizador_ue_cust_cat');
         } catch (e) {
             response.error = true;
             response.mensaje = "Netsuite Error - Excepción: " + e.message;

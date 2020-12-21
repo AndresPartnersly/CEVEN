@@ -1,9 +1,11 @@
 /** @NApiVersion 2.1
+ * @NAmdConfig /SuiteScripts/configuration.json
  * @NScriptType Suitelet
+ * @NModuleScope SameAccount
  */
-define(['N/ui/serverWidget', 'N/https', 'N/runtime', 'N/query'],
+define(['N/ui/serverWidget', 'N/https', 'N/runtime', 'PTLY/AndreaniUtilities'],
 
-function(serverWidget, https, runtime, query) {
+function(serverWidget, https, runtime, utilities) {
 
 	const proceso = 'Andreani Cotizar Envio - Suitelet';
 	const title = 'Andreani - Cotizar Envío';
@@ -52,7 +54,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 			
-			if (!isEmpty(context.request.parameters.codClienteAndreaniB2C))
+			if (!utilities.isEmpty(context.request.parameters.codClienteAndreaniB2C))
 				custpage_codcliente.defaultValue = context.request.parameters.codClienteAndreaniB2C;
 
 			// CONTRATO ANDREANI ENVIO DOMICILIO B2C
@@ -67,7 +69,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});
 
-			if (!isEmpty(context.request.parameters.contEnvioDomB2C))
+			if (!utilities.isEmpty(context.request.parameters.contEnvioDomB2C))
 				custpage_cont_domicilio.defaultValue = context.request.parameters.contEnvioDomB2C;
 
 			// CONTRATO ANDREANI ENVIO URGENTE DOMICILIO B2C
@@ -82,7 +84,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});			
 
-			if (!isEmpty(context.request.parameters.contEnvioUrgDomB2C))
+			if (!utilities.isEmpty(context.request.parameters.contEnvioUrgDomB2C))
 				custpage_cont_domicilio_urgente.defaultValue = context.request.parameters.contEnvioUrgDomB2C;
 
 			// CONTRATO ANDREANI ENVIO SUCURSAL B2C
@@ -97,7 +99,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
-			if (!isEmpty(context.request.parameters.contEnvioSucB2C))
+			if (!utilities.isEmpty(context.request.parameters.contEnvioSucB2C))
 				custpage_cont_env_suc.defaultValue = context.request.parameters.contEnvioSucB2C;
 
 			// ME ANDREANI ENVIO DOMICILIO
@@ -112,7 +114,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
-			if (!isEmpty(context.request.parameters.meEnvioDomicilio))
+			if (!utilities.isEmpty(context.request.parameters.meEnvioDomicilio))
 				custpage_me_env_dom.defaultValue = context.request.parameters.meEnvioDomicilio;
 
 			// ME ANDREANI ENVIO URGENTE DOMICILIO
@@ -127,7 +129,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
-			if (!isEmpty(context.request.parameters.meEnvioUrgDomicilio))
+			if (!utilities.isEmpty(context.request.parameters.meEnvioUrgDomicilio))
 				custpage_me_env_urg_dom.defaultValue = context.request.parameters.meEnvioUrgDomicilio;
 
 			// ME ANDREANI ENVIO SUCURSAL
@@ -142,7 +144,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
-			if (!isEmpty(context.request.parameters.meEnvioSuc))
+			if (!utilities.isEmpty(context.request.parameters.meEnvioSuc))
 			custpage_me_env_suc.defaultValue = context.request.parameters.meEnvioSuc;
 
 			//PESO DECLARADO
@@ -157,7 +159,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.DISABLED
 			});
 
-			if (!isEmpty(context.request.parameters.dirDestino))
+			if (!utilities.isEmpty(context.request.parameters.dirDestino))
 				custpage_peso.defaultValue = context.request.parameters.pesoDeclarado;
 
 			//VOLUMEN DECLARADO
@@ -184,7 +186,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.DISABLED
 			});
 
-			if (!isEmpty(context.request.parameters.dirDestino))
+			if (!utilities.isEmpty(context.request.parameters.dirDestino))
 				custpage_direccion.defaultValue = context.request.parameters.dirDestino;
 
 			//CODIGO POSTAL DESTINO
@@ -199,7 +201,7 @@ function(serverWidget, https, runtime, query) {
 				displayType: serverWidget.FieldDisplayType.DISABLED
 			});	
 
-			if (!isEmpty(context.request.parameters.codPostalDestino))
+			if (!utilities.isEmpty(context.request.parameters.codPostalDestino))
 				custpage_codpostal.defaultValue = context.request.parameters.codPostalDestino;
 
 			//SUCURSAL ANDREANI
@@ -420,6 +422,52 @@ function(serverWidget, https, runtime, query) {
 			});
 
 			custpage_codpostal.defaultValue = context.request.parameters.custpage_codpostal;
+
+			// CONTRATO ANDREANI ENVIO DOMICILIO B2C
+			let custpage_cont_domicilio = form.addField({
+				id:'custpage_cont_domicilio',
+				label:'Andreani Contrato Envio Domicilio',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_parametros'
+			});
+
+			custpage_cont_domicilio.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});
+
+			if (!utilities.isEmpty(context.request.parameters.custpage_cont_domicilio))
+				custpage_cont_domicilio.defaultValue = context.request.parameters.custpage_cont_domicilio;
+
+			// CONTRATO ANDREANI ENVIO URGENTE DOMICILIO B2C
+			let custpage_cont_domicilio_urgente = form.addField({
+				id:'custpage_cont_domicilio_urgente',
+				label:'Andreani Contrato Envio Domicilio Urgente',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_parametros'
+			});
+
+			custpage_cont_domicilio_urgente.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});			
+
+			if (!utilities.isEmpty(context.request.parameters.custpage_cont_domicilio_urgente))
+				custpage_cont_domicilio_urgente.defaultValue = context.request.parameters.custpage_cont_domicilio_urgente;
+
+			// CONTRATO ANDREANI ENVIO SUCURSAL B2C
+			let custpage_cont_env_suc = form.addField({
+				id:'custpage_cont_env_suc',
+				label:'Andreani Contrato Retiro Sucursal',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_parametros'
+			});
+
+			custpage_cont_env_suc.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});	
+
+			if (!utilities.isEmpty(context.request.parameters.custpage_cont_env_suc))
+				custpage_cont_env_suc.defaultValue = context.request.parameters.custpage_cont_env_suc;
+
 			
 			form.addButton({
 				id: 'custpage_procesar',
@@ -459,7 +507,7 @@ function(serverWidget, https, runtime, query) {
 			//SE GENERA TOKEN
 			let token = generarToken();
 
-			if (!isEmpty(token))
+			if (!utilities.isEmpty(token))
 			{
 
 				log.debug({
@@ -480,7 +528,7 @@ function(serverWidget, https, runtime, query) {
 				let urlEnvioDomicilio = `${url}?cpDestino=${cpDestino}&contrato=${contratoEnvioDomicilioB2C}&bultos[0][volumen]=${volumen}&bultos[0][kilos]=${kilos}`;
 				let respEnvioDomicilio = cotizarEnvio(urlEnvioDomicilio, token);
 
-				if (!isEmpty(respEnvioDomicilio))
+				if (!utilities.isEmpty(respEnvioDomicilio))
 				{
 					log.debug({
 						title: proceso,
@@ -503,7 +551,7 @@ function(serverWidget, https, runtime, query) {
 				let urlEnvioUrgDomicilio = `${url}?cpDestino=${cpDestino}&contrato=${contratoEnvioUrgDomicilioB2C}&bultos[0][volumen]=${volumen}&bultos[0][kilos]=${kilos}`;
 				let respEnvioUrgDomicilio = cotizarEnvio(urlEnvioUrgDomicilio, token);
 
-				if (!isEmpty(respEnvioDomicilio))
+				if (!utilities.isEmpty(respEnvioDomicilio))
 				{
 					log.debug({
 						title: proceso,
@@ -526,7 +574,7 @@ function(serverWidget, https, runtime, query) {
 				let urlEnvioSuc = `${url}?cpDestino=${cpDestinoAndreani}&contrato=${contratoEnvioSucB2C}&bultos[0][volumen]=${volumen}&bultos[0][kilos]=${kilos}`;
 				let respEnvioSucgDomicilio = cotizarEnvio(urlEnvioSuc, token);
 
-				if (!isEmpty(respEnvioSucgDomicilio))
+				if (!utilities.isEmpty(respEnvioSucgDomicilio))
 				{
 					log.debug({
 						title: proceso,
@@ -551,7 +599,7 @@ function(serverWidget, https, runtime, query) {
 				details: JSON.stringify(arrayResumen)
 			});
 
-			if (!isEmpty(arrayResumen))
+			if (!utilities.isEmpty(arrayResumen))
 			{
 				let tablehtml = '<table style="width: 50vw; padding: 0px 0px 25px 20px"><thead>';
 				tablehtml += '<tr style="background-color: #e9e8e8;color: #666; font-size: 11px;">';
@@ -601,7 +649,7 @@ function(serverWidget, https, runtime, query) {
 			details: JSON.stringify(response)
 		})
 
-		if (!isEmpty(response))
+		if (!utilities.isEmpty(response))
 		{
 			if (response.code == 200)
 			{
@@ -631,9 +679,9 @@ function(serverWidget, https, runtime, query) {
 
 	let cotizarEnvio = (url, token) => {
 
-		if (!isEmpty(url))
+		if (!utilities.isEmpty(url))
 		{
-			if (!isEmpty(token))
+			if (!utilities.isEmpty(token))
 			{
 				log.debug({
 					title: proceso,
@@ -647,7 +695,7 @@ function(serverWidget, https, runtime, query) {
 					headers: headers
 				});
 
-				if (!isEmpty(response))
+				if (!utilities.isEmpty(response))
 				{
 					if (response.code == 200)
 					{
@@ -690,38 +738,8 @@ function(serverWidget, https, runtime, query) {
 		}
 	}
 
-	
-    let isEmpty = (value) => {
-
-        if (value === '')
-        {
-            return true;
-        }
-
-        if (value === null)
-        {
-            return true;
-        }
-
-        if (value === undefined)
-        {
-            return true;
-        }
-        
-        if (value === 'undefined')
-        {
-            return true;
-        }
-
-        if (value === 'null')
-        {
-            return true;
-        }
-
-        return false;
-	}
-
     return {
         onRequest: onRequest
-    };
+	};
+	
 });
