@@ -4,9 +4,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/query', 'PTLY/AndreaniUtilities', 'N/https', 'N/search', 'N/runtime'],
+define(['N/query', 'PTLY/AndreaniUtilities', 'N/https', 'N/search', 'N/runtime', 'N/query'],
 
-function(query, utilities, https, search, runtime) {
+function(query, utilities, https, search, runtime, query) {
 
     const sublist = 'item';
     const sublistPkg = 'package';
@@ -44,7 +44,6 @@ function(query, utilities, https, search, runtime) {
 
         if (scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT || scriptContext.type == scriptContext.UserEventType.PACK)// || scriptContext.type == scriptContext.UserEventType.COPY)
         {
-
             let newRecord = scriptContext.newRecord;
             let oldRecord = scriptContext.oldRecord;
 
@@ -52,233 +51,304 @@ function(query, utilities, https, search, runtime) {
                 fieldId: 'custbody_ptly_contrato_andreani'
             });
 
-            if (!utilities.isEmpty(contrato))
+            contrato = '300006611';
+
+            let sucId = newRecord.getValue({
+                fieldId: 'custbody_ptly_suc_id_andreani'
+            });
+
+            let subsidiaria = newRecord.getValue({
+                fieldId: 'subsidiary'
+            });
+
+            let shipmethod = newRecord.getValue({
+                fieldId: 'shipmethod'
+            });
+
+            let esEnvioSuc = false;
+
+            let arrayConfig = getConfig(subsidiaria);
+
+            if (!utilities.isEmpty(arrayConfig))
             {
-                let shipstatusOR;
-                let shipstatusNR = newRecord.getValue({
-                    fieldId: 'shipstatus'
-                });
-
-                if (!isEmpty(oldRecord))
+                if (arrayConfig.length > 0)
                 {
-                    shipstatusOR = oldRecord.getValue({
-                        fieldId: 'shipstatus'
-                    });
-                }
+                    let meEnvDom = arrayConfig[0].meenvdom;
+                    let meEnvUrgDom = arrayConfig[0].meenvurgdom;
+                    let meEnvSuc = arrayConfig[0].meenvsuc;
 
-                log.debug({
-                    title: proceso,
-                    details: `shipstatusNR: ${shipstatusOR} - shipstatusOR: ${shipstatusNR}`
-                });
+                    log.debug(proceso, `77 - meEnvDom: ${meEnvDom} - meEnvUrgDom ${meEnvUrgDom} - meEnvSuc: ${meEnvSuc} - subsidiaria: ${subsidiaria} - sucId: ${sucId} - contrato: ${contrato} - shipmethod: ${shipmethod} - arrayConfig: ${JSON.stringify(arrayConfig)}`);
 
-                if (((!utilities.isEmpty(shipstatusOR) && !utilities.isEmpty(shipstatusNR)) && (shipstatusOR == 'A' && shipstatusNR == 'B')) || ((utilities.isEmpty(shipstatusOR) && !utilities.isEmpty(shipstatusNR) && shipstatusNR == 'B')))
-                {
-                    let expReg = /[^0-9.]+/g;
-                    //let contrato = '400006709';
-                    let location;
-                    let cantItems;
-                    let cantPackage;
-
-                    log.debug({
-                        title: proceso,
-                        details: `newRecord: ${JSON.stringify(newRecord)}`
-                    });
-
-                    //CANTIDAD DE ARTICULOS
-                    cantItems = newRecord.getLineCount({
-                        sublistId: sublist
-                    });
-
-                    //SE DETERMINA EL LOCATION PARA INDICAR LOS DATOS DEL ORIGEN AL CREAR LA OE EN ANDREANI
-                    if (cantItems > 0)
+                    if (meEnvDom == shipmethod || meEnvUrgDom == shipmethod || meEnvSuc == shipmethod)
                     {
-                        location = newRecord.getSublistValue({
-                            sublistId: sublist,
-                            fieldId: 'location',
-                            line: 0
-                        });
-                    }
+                        // SI EL METODO DE ENVIO ES ENVIO A SUCURSAL ANDREANI Y LA TRANSACCION TIENE ID SUCURSAL ANDREANI CONFIGURADO
+                        if (meEnvSuc == shipmethod)
+                            esEnvioSuc = true;
 
-                    if (!utilities.isEmpty(location))
-                    {
-                        //DATOS DEL ORIGEN
-                        log.debug(proceso, `98 - INICIO - time ${new Date()}`);
-                        let arrLocation = getOrigenLocationData(location);
-                        log.debug(proceso, `100 - FIN - time ${new Date()}  -  arrLocation: ${JSON.stringify(arrLocation)}`);
-
-                        log.debug({
-                            title: proceso,
-                            details: `LINE 104 location: ${location} -  arrLocation: ${JSON.stringify(arrLocation)}`
-                        });
-
-                        if ((!utilities.isEmpty(arrLocation.length) && arrLocation.length > 0))
+                        if ((!utilities.isEmpty(sucId) && esEnvioSuc) || !esEnvioSuc)
                         {
-                            //CANTIDAD DE PAQUETES
-                            cantPackage = newRecord.getLineCount({
-                                sublistId: sublistPkg
-                            });
-
-                            // SI EXISTEN DATOS EN LA SUBLISTA DE PAQUETES SE LEVANTA LA INFORMACION PARA REPORTARLOS COMO BULTOS AL CREAR LA OE EN ANDREANI
-                            if (cantPackage > 0)
+                            if (!utilities.isEmpty(contrato))
                             {
-                                //DATOS DE LOS BULTOS
-                                log.debug(proceso, `118 - INICIO - time ${new Date()}`);
-                                let arrayPackage = getPackagesData(cantPackage, newRecord);
-                                log.debug(proceso, `120 - FIN - time ${new Date()}`);
+                                let shipstatusOR;
+                                let shipstatusNR = newRecord.getValue({
+                                    fieldId: 'shipstatus'
+                                });
+
+                                if (!isEmpty(oldRecord))
+                                {
+                                    shipstatusOR = oldRecord.getValue({
+                                        fieldId: 'shipstatus'
+                                    });
+                                }
 
                                 log.debug({
                                     title: proceso,
-                                    details: `LINE 124 arrayPackage: ${JSON.stringify(arrayPackage)}`
+                                    details: `shipstatusNR: ${shipstatusOR} - shipstatusOR: ${shipstatusNR}`
                                 });
 
-                                if (!utilities.isEmpty(arrayPackage) && arrayPackage.length> 0)
+                                if (((!utilities.isEmpty(shipstatusOR) && !utilities.isEmpty(shipstatusNR)) && (shipstatusOR == 'A' && shipstatusNR == 'B')) || ((utilities.isEmpty(shipstatusOR) && !utilities.isEmpty(shipstatusNR) && shipstatusNR == 'B')))
                                 {
+                                    let expReg = /[^0-9.]+/g;
+                                    //let contrato = '400006709';
+                                    let location;
+                                    let cantItems;
+                                    let cantPackage;
 
-                                    let createdFromId =  newRecord.getValue({
-                                        fieldId: 'createdfrom'
+                                    log.debug({
+                                        title: proceso,
+                                        details: `newRecord: ${JSON.stringify(newRecord)}`
                                     });
 
-                                    if (!utilities.isEmpty(createdFromId))
+                                    //CANTIDAD DE ARTICULOS
+                                    cantItems = newRecord.getLineCount({
+                                        sublistId: sublist
+                                    });
+
+                                    //SE DETERMINA EL LOCATION PARA INDICAR LOS DATOS DEL ORIGEN AL CREAR LA OE EN ANDREANI
+                                    if (cantItems > 0)
                                     {
-                                        //DATOS DEL DESTINO Y DESTINATARIO
-                                        log.debug(proceso, `137 - INICIO - time ${new Date()}`);
-                                        let arrayDestino = getDestinoData(createdFromId);
-                                        log.debug(proceso, `139 - FIN - time ${new Date()}`);
+                                        location = newRecord.getSublistValue({
+                                            sublistId: sublist,
+                                            fieldId: 'location',
+                                            line: 0
+                                        });
+                                    }
+
+                                    if (!utilities.isEmpty(location))
+                                    {
+                                        //DATOS DEL ORIGEN
+                                        log.debug(proceso, `98 - INICIO - time ${new Date()}`);
+                                        let arrLocation = getOrigenLocationData(location);
+                                        log.debug(proceso, `100 - FIN - time ${new Date()}  -  arrLocation: ${JSON.stringify(arrLocation)}`);
 
                                         log.debug({
                                             title: proceso,
-                                            details: `arrayDestino: ${JSON.stringify(arrayDestino)}`
+                                            details: `LINE 104 location: ${location} -  arrLocation: ${JSON.stringify(arrLocation)}`
                                         });
 
-                                        let bodyRequest = {};
-                                        bodyRequest.contrato = contrato;
-            
-                                        // DATOS ORIGEN
-                                        bodyRequest.origen = {};
-                                        bodyRequest.origen.postal = {};
-                                        bodyRequest.origen.postal.codigoPostal = arrLocation[0].zipcode;
-                                        bodyRequest.origen.postal.localidad = arrLocation[0].state;
-                                        bodyRequest.origen.postal.calle = arrLocation[0].addressaddr1;
-                                        bodyRequest.origen.postal.numero = arrLocation[0].addressaddr1.replace(expReg,'');
-
-                                        // DATOS DEL REMITENTE
-                                        bodyRequest.remitente = {};
-                                        bodyRequest.remitente.nombreCompleto = arrLocation[0].subsidiarylegalname;
-                                        bodyRequest.remitente.eMail = arrLocation[0].emailsubsidiaria;
-                                        bodyRequest.remitente.documentoTipo = 'CUIT';
-                                        bodyRequest.remitente.documentoNumero = arrLocation[0].vatregnumber;
-            
-                                        // DATOS DESTINO
-                                        bodyRequest.destino = {};
-                                        bodyRequest.destino.postal = {};
-                                        bodyRequest.destino.postal.codigoPostal = arrayDestino[0].codigoPostalDestino;
-                                        bodyRequest.destino.postal.localidad = arrayDestino[0].localidadDestino;
-                                        bodyRequest.destino.postal.calle = arrayDestino[0].calleDestino;
-                                        bodyRequest.destino.postal.numero = arrayDestino[0].numeroDestino.replace(expReg,'');
-            
-                                        // DATOS DESTINATARIO
-                                        bodyRequest.destinatario = [];
-                                        let destinatarioObjet = {};
-                                        destinatarioObjet.nombreCompleto = arrayDestino[0].nombreCompletoDestinatario;
-                                        destinatarioObjet.eMail = arrayDestino[0].eMailDestinatario;
-                                        destinatarioObjet.documentoTipo = arrayDestino[0].documentoTipoDestinatario;
-                                        destinatarioObjet.documentoNumero = arrayDestino[0].documentoNumeroDestinatario;
-                                        bodyRequest.destinatario.push(destinatarioObjet);
-            
-                                        // DATOS DE LOS BULTOS
-                                        bodyRequest.bultos = [];
-
-                                        for (let i = 0; i < arrayPackage.length; i++)
+                                        if ((!utilities.isEmpty(arrLocation.length) && arrLocation.length > 0))
                                         {
-                                            let bultosObjet = {};
-                                            bultosObjet.kilos = arrayPackage[i].kilos;
-                                            bultosObjet.volumenCm = arrayPackage[i].kilos;
-                                            bodyRequest.bultos.push(bultosObjet);
-                                        }
-            
-                                        log.debug({
-                                            title: proceso,
-                                            details: `bodyRequest: ${JSON.stringify(bodyRequest)}`
-                                        });
-            
-                                        let url = `https://api.qa.andreani.com/v2/ordenes-de-envio`;
-                                        log.debug(proceso, `198 - INICIO - time ${new Date()}`);
-                                        let token = utilities.generarToken('https://api.qa.andreani.com/login');
-                                        log.debug(proceso, `200 - FIN - time ${new Date()}`);
-            
-                                        log.debug(proceso, `202 - INICIO - time ${new Date()}`);
-                                        let respCrearOE = crearOrdenEnvio(url, token, bodyRequest);
-                                        log.debug(proceso, `204 - FIN - time ${new Date()}`);
+                                            //CANTIDAD DE PAQUETES
+                                            cantPackage = newRecord.getLineCount({
+                                                sublistId: sublistPkg
+                                            });
 
-                                        log.debug(proceso, `206 - respCrearOE ${respCrearOE}`);
-            
-                                        if (!utilities.isEmpty(respCrearOE))
-                                        {   
-                                            if (respCrearOE.code == 200 || respCrearOE.code == 202)
+                                            // SI EXISTEN DATOS EN LA SUBLISTA DE PAQUETES SE LEVANTA LA INFORMACION PARA REPORTARLOS COMO BULTOS AL CREAR LA OE EN ANDREANI
+                                            if (cantPackage > 0)
                                             {
-                                                let body = JSON.parse(respCrearOE.body);
-                                                let arrayBultos = [];
+                                                //DATOS DE LOS BULTOS
+                                                log.debug(proceso, `118 - INICIO - time ${new Date()}`);
+                                                let arrayPackage = getPackagesData(cantPackage, newRecord);
+                                                log.debug(proceso, `120 - FIN - time ${new Date()}`);
 
-                                                if (!utilities.isEmpty(body.bultos))
+                                                log.debug({
+                                                    title: proceso,
+                                                    details: `LINE 124 arrayPackage: ${JSON.stringify(arrayPackage)}`
+                                                });
+
+                                                if (!utilities.isEmpty(arrayPackage) && arrayPackage.length> 0)
                                                 {
-                                                    for (let i =0; i < body.bultos.length; i++)
-                                                    {
-                                                        let objeto = {};
-                                                        objeto.numeroDeBulto = body.bultos[i].numeroDeBulto;
-                                                        objeto.numeroDeEnvio = body.bultos[i].numeroDeEnvio;
-                                                        arrayBultos.push(objeto);
-                                                    }
-                                                }
 
-                                                log.debug(proceso, `226 - arrayBultos ${JSON.stringify(arrayBultos)}`);
-                                                
-                                                if (!utilities.isEmpty(arrayBultos) && body.bultos.length > 0 && cantPackage == body.bultos.length)
-                                                {
-                                                    log.debug(proceso, `230 - INICIO - time ${new Date()}`);
-                                                    let response = setAndreaniResponse(cantPackage, newRecord, arrayBultos);
-                                                    log.debug(proceso, `233 - FIN - time ${new Date()}`);
+                                                    let createdFromId =  newRecord.getValue({
+                                                        fieldId: 'createdfrom'
+                                                    });
 
-                                                    if (response)
+                                                    if (!utilities.isEmpty(createdFromId))
                                                     {
+                                                        //DATOS DEL DESTINO Y DESTINATARIO
+                                                        log.debug(proceso, `137 - INICIO - time ${new Date()}`);
+                                                        let arrayDestino = getDestinoData(createdFromId);
+                                                        log.debug(proceso, `139 - FIN - time ${new Date()}`);
+
                                                         log.debug({
                                                             title: proceso,
-                                                            details: `Orden de Envio Andreani generada correctamente`
+                                                            details: `arrayDestino: ${JSON.stringify(arrayDestino)}`
+                                                        });
+
+                                                        let bodyRequest = {};
+                                                        bodyRequest.contrato = contrato;
+                            
+                                                        // DATOS ORIGEN POSTAL
+                                                        bodyRequest.origen = {};
+                                                        bodyRequest.origen.postal = {};
+                                                        bodyRequest.origen.postal.codigoPostal = arrLocation[0].zipcode;
+                                                        bodyRequest.origen.postal.localidad = arrLocation[0].state;
+                                                        bodyRequest.origen.postal.calle = arrLocation[0].addressaddr1;
+                                                        bodyRequest.origen.postal.numero = arrLocation[0].addressaddr1.replace(expReg,'');
+
+                                                        // DATOS DEL REMITENTE
+                                                        bodyRequest.remitente = {};
+                                                        bodyRequest.remitente.nombreCompleto = arrLocation[0].subsidiarylegalname;
+                                                        bodyRequest.remitente.eMail = arrLocation[0].emailsubsidiaria;
+                                                        bodyRequest.remitente.documentoTipo = 'CUIT';
+                                                        bodyRequest.remitente.documentoNumero = arrLocation[0].vatregnumber;
+                            
+                                                        if (esEnvioSuc)
+                                                        {
+                                                            // DATOS DESTINO SUCURSAL
+                                                            bodyRequest.destino = {};
+                                                            bodyRequest.destino.sucursal = {};
+                                                            bodyRequest.destino.sucursal.id = sucId;                                                  
+                                                        }
+                                                        else
+                                                        {
+                                                            // DATOS DESTINO POSTAL
+                                                            bodyRequest.destino = {};
+                                                            bodyRequest.destino.postal = {};
+                                                            bodyRequest.destino.postal.codigoPostal = arrayDestino[0].codigoPostalDestino;
+                                                            bodyRequest.destino.postal.localidad = arrayDestino[0].localidadDestino;
+                                                            bodyRequest.destino.postal.calle = arrayDestino[0].calleDestino;
+                                                            bodyRequest.destino.postal.numero = arrayDestino[0].numeroDestino.replace(expReg,'');
+                                                        }
+                           
+                                                        // DATOS DESTINATARIO
+                                                        bodyRequest.destinatario = [];
+                                                        let destinatarioObjet = {};
+                                                        destinatarioObjet.nombreCompleto = arrayDestino[0].nombreCompletoDestinatario;
+                                                        destinatarioObjet.eMail = arrayDestino[0].eMailDestinatario;
+                                                        destinatarioObjet.documentoTipo = arrayDestino[0].documentoTipoDestinatario;
+                                                        destinatarioObjet.documentoNumero = arrayDestino[0].documentoNumeroDestinatario;
+                                                        bodyRequest.destinatario.push(destinatarioObjet);
+                            
+                                                        // DATOS DE LOS BULTOS
+                                                        bodyRequest.bultos = [];
+
+                                                        for (let i = 0; i < arrayPackage.length; i++)
+                                                        {
+                                                            let bultosObjet = {};
+                                                            bultosObjet.kilos = arrayPackage[i].kilos;
+                                                            bultosObjet.volumenCm = arrayPackage[i].kilos;
+                                                            bodyRequest.bultos.push(bultosObjet);
+                                                        }
+                            
+                                                        log.debug({
+                                                            title: proceso,
+                                                            details: `245 - bodyRequest: ${JSON.stringify(bodyRequest)}`
+                                                        });
+                            
+                                                        let url = `https://api.qa.andreani.com/v2/ordenes-de-envio`;
+                                                        log.debug(proceso, `249 - INICIO - time ${new Date()}`);
+                                                        let token = utilities.generarToken('https://api.qa.andreani.com/login');
+                                                        log.debug(proceso, `251 - FIN - time ${new Date()}`);
+                            
+                                                        log.debug(proceso, `253 - INICIO - time ${new Date()}`);
+                                                        let respCrearOE = crearOrdenEnvio(url, token, bodyRequest);
+                                                        log.debug(proceso, `255 - FIN - time ${new Date()}`);
+
+                                                        log.debug(proceso, `257 - respCrearOE ${JSON.stringify(respCrearOE)}`);
+                            
+                                                        if (!utilities.isEmpty(respCrearOE))
+                                                        {   
+                                                            if (respCrearOE.code == 200 || respCrearOE.code == 202)
+                                                            {
+                                                                let body = JSON.parse(respCrearOE.body);
+                                                                let arrayBultos = [];
+
+                                                                if (!utilities.isEmpty(body.bultos))
+                                                                {
+                                                                    for (let i =0; i < body.bultos.length; i++)
+                                                                    {
+                                                                        let objeto = {};
+                                                                        objeto.numeroDeBulto = body.bultos[i].numeroDeBulto;
+                                                                        objeto.numeroDeEnvio = body.bultos[i].numeroDeEnvio;
+                                                                        arrayBultos.push(objeto);
+                                                                    }
+                                                                }
+
+                                                                log.debug(proceso, `277 - arrayBultos ${JSON.stringify(arrayBultos)}`);
+                                                                
+                                                                if (!utilities.isEmpty(arrayBultos) && body.bultos.length > 0 && cantPackage == body.bultos.length)
+                                                                {
+                                                                    log.debug(proceso, `281 - INICIO - time ${new Date()}`);
+                                                                    let response = setAndreaniResponse(cantPackage, newRecord, arrayBultos);
+                                                                    log.debug(proceso, `283 - FIN - time ${new Date()}`);
+
+                                                                    if (response)
+                                                                    {
+                                                                        log.debug({
+                                                                            title: proceso,
+                                                                            details: `Orden de Envio Andreani generada correctamente`
+                                                                        });
+                                                                    }
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                log.error({
+                                                                    title: proceso,
+                                                                    details: `No se obtuvo una respuesta valida del servicio de creación de Orden de Envio Andreani - Codigo de error: ${respCrearOE.code}`
+                                                                });
+                                                            }
+
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        log.error({
+                                                            title: proceso,
+                                                            details: `No se pudo obtener los datos del destino y destinatario, dato necesario para indicar en la Orden de Envio Andreani`
                                                         });
                                                     }
+                                                }
+                                                else
+                                                {
+                                                    log.error({
+                                                        title: proceso,
+                                                        details: `Error al crear arreglo de Paquetes, dato necesario para indicar los bultos en la Orden de Envio Andreani`
+                                                    });
                                                 }
                                             }
                                             else
                                             {
                                                 log.error({
                                                     title: proceso,
-                                                    details: `No se obtuvo una respuesta valida del servicio de creación de Orden de Envio Andreani - Codigo de error: ${respCrearOE.code}`
+                                                    details: `La transacción no tiene información en la sublista de "Paquetes / Packages", dato necesario para indicar los bultos en la Orden de Envio Andreani`
                                                 });
                                             }
-
                                         }
+                                        else
+                                        {
+                                            log.error({
+                                                title: proceso,
+                                                details: `No se pudo determinar el detalle de la Ubicación, dato necesario para indicar el origen de la Orden de Envio Andreani`
+                                            });
+                                        }
+
                                     }
                                     else
                                     {
                                         log.error({
                                             title: proceso,
-                                            details: `No se pudo obtener los datos del destino y destinatario, dato necesario para indicar en la Orden de Envio Andreani`
+                                            details: `No se pudo determinar el ID de la Ubicación, dato necesario para indicar el origen de la Orden de Envio Andreani`
                                         });
                                     }
                                 }
-                                else
-                                {
-                                    log.error({
-                                        title: proceso,
-                                        details: `Error al crear arreglo de Paquetes, dato necesario para indicar los bultos en la Orden de Envio Andreani`
-                                    });
-                                }
-
                             }
                             else
                             {
                                 log.error({
                                     title: proceso,
-                                    details: `La transacción no tiene información en la sublista de "Paquetes / Packages", dato necesario para indicar los bultos en la Orden de Envio Andreani`
+                                    details: `No se puede crear Orden de Envio Andreani porque no existe numero de contrato asociado a la transacción`
                                 });
                             }
                         }
@@ -286,26 +356,18 @@ function(query, utilities, https, search, runtime) {
                         {
                             log.error({
                                 title: proceso,
-                                details: `No se pudo determinar el detalle de la Ubicación, dato necesario para indicar el origen de la Orden de Envio Andreani`
+                                details: `No se puede crear Orden de Envio Andreani porque no esta configurado el ID de la sucursal`
                             });
                         }
-
-                    }
-                    else
-                    {
-                        log.error({
-                            title: proceso,
-                            details: `No se pudo determinar el ID de la Ubicación, dato necesario para indicar el origen de la Orden de Envio Andreani`
-                        });
                     }
                 }
-            }
-            else
-            {
-                log.error({
-                    title: proceso,
-                    details: `No se puede crear Orden de Envio Andreani porque no existe numero de contrato asociado a la transacción`
-                });
+                else
+                {
+                    log.error({
+                        title: proceso,
+                        details: `No se puede crear Orden de Envio Andreani porque no se pudo cargar configuración asociada a la subsidiaria`
+                    });
+                }
             }
         }
 
@@ -496,7 +558,6 @@ function(query, utilities, https, search, runtime) {
         {
             return false;
         }
-
     }
 
 	    
@@ -575,7 +636,32 @@ function(query, utilities, https, search, runtime) {
 				details: `crearOrdenEnvio - No se recibio el parametro: URL`
 			});
 		}
-	}
+    }
+    
+    let getConfig = (subsidiaria) =>
+    {
+        let arrResults = [];
+
+        let strSQL = "SELECT custrecord_ptly_cot_andreani_cod_cli AS codigoCliente, custrecord_ptly_cot_andreani_con_env_dom AS contratoEnviDom, " +
+        "custrecord_ptly_cot_andreani_con_env_urg AS contratoEnvioUrgDom, custrecord_ptly_cot_andreani_env_suc AS contratoEnvioSuc, " +
+        "custrecord_ptly_cot_andreani_me_env_dom AS meEnvDom, custrecord_ptly_cot_andreani_me_env_urg AS meEnvUrgDom, " +
+        "custrecord_ptly_cot_andreani_me_env_suc AS meEnvSuc FROM customrecord_ptly_cot_andreani " +
+        "WHERE custrecord_ptly_cot_andreani_sub = "+ subsidiaria +"\n";
+
+        let objPagedData = query.runSuiteQLPaged({
+            query: strSQL,
+            pageSize: 1
+        });
+        
+        objPagedData.pageRanges.forEach(function(pageRange) {
+            //fetch
+            let objPage = objPagedData.fetch({ index: pageRange.index }).data;
+            // Map results to columns 
+            arrResults.push.apply(arrResults, objPage.asMappedResults());
+        });
+
+        return arrResults;
+    }
 
     return {
         //beforeLoad: beforeLoad,

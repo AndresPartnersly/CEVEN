@@ -151,7 +151,7 @@ function(serverWidget, https, runtime, utilities) {
 			let custpage_peso = form.addField({
 				id:'custpage_peso',
 				label:'Peso Declarado (Kilogramos)',
-				type: serverWidget.FieldType.TEXT,
+				type: serverWidget.FieldType.FLOAT,
 				container: 'fg_inicio'
 			});
 
@@ -166,7 +166,7 @@ function(serverWidget, https, runtime, utilities) {
 			let custpage_volumen = form.addField({
 				id:'custpage_volumen',
 				label:'Volumen Declarado',
-				type: serverWidget.FieldType.TEXT,
+				type: serverWidget.FieldType.FLOAT,
 				container: 'fg_inicio'
 			});
 
@@ -240,7 +240,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_cod.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			//CALLE SUCURSAL ANDREANI
@@ -252,7 +252,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_calle.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			//CALLE NRO SUCURSAL ANDREANI
@@ -264,7 +264,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_calle_nro.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			//LOCALIDAD SUCURSAL ANDREANI
@@ -276,7 +276,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_loc.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			//REGION SUCURSAL ANDREANI
@@ -288,8 +288,32 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_reg.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
-			});	
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});
+			
+			//SUCURSAL ID
+			let custpage_suc_id = form.addField({
+				id:'custpage_suc_id',
+				label:'Sucursal ID',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_suc_id.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});
+
+			//COD POSTAL SUCURSAL ID
+			let custpage_cod_post_suc = form.addField({
+				id:'custpage_cod_post_suc',
+				label:'Codigo Postal Sucursal',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_cod_post_suc.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});
 
 			form.addSubmitButton({
 				label: 'Cotizar'
@@ -362,7 +386,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_calle.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			custpage_sucandreani_calle.defaultValue = context.request.parameters.custpage_sucandreani_calle;
@@ -376,7 +400,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_calle_nro.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			custpage_sucandreani_calle_nro.defaultValue = context.request.parameters.custpage_sucandreani_calle_nro;
@@ -390,7 +414,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_loc.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			custpage_sucandreani_loc.defaultValue = context.request.parameters.custpage_sucandreani_loc;
@@ -404,7 +428,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_sucandreani_reg.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});	
 
 			custpage_sucandreani_reg.defaultValue = context.request.parameters.custpage_sucandreani_reg;
@@ -418,7 +442,7 @@ function(serverWidget, https, runtime, utilities) {
 			});
 
 			custpage_codpostal.updateDisplayType({
-				displayType: serverWidget.FieldDisplayType.DISABLED
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});
 
 			custpage_codpostal.defaultValue = context.request.parameters.custpage_codpostal;
@@ -467,6 +491,36 @@ function(serverWidget, https, runtime, utilities) {
 
 			if (!utilities.isEmpty(context.request.parameters.custpage_cont_env_suc))
 				custpage_cont_env_suc.defaultValue = context.request.parameters.custpage_cont_env_suc;
+
+			//SUCURSAL ID
+			let custpage_suc_id = form.addField({
+				id:'custpage_suc_id',
+				label:'Sucursal ID',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_suc_id.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});
+
+			if (!utilities.isEmpty(context.request.parameters.custpage_suc_id))
+				custpage_suc_id.defaultValue = context.request.parameters.custpage_suc_id;
+
+			//CODIGO POSTAL SUCURSAL
+			let custpage_cod_post_suc = form.addField({
+				id:'custpage_cod_post_suc',
+				label:'Codigo Postal Sucursal',
+				type: serverWidget.FieldType.TEXT,
+				container: 'fg_destino_andreani'
+			});
+
+			custpage_cod_post_suc.updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});
+
+			if (!utilities.isEmpty(context.request.parameters.custpage_cod_post_suc))
+				custpage_cod_post_suc.defaultValue = context.request.parameters.custpage_cod_post_suc;
 
 			
 			form.addButton({
@@ -541,7 +595,7 @@ function(serverWidget, https, runtime, utilities) {
 						let objeto = {};
 						objeto.tipoEnvio = 1;
 						objeto.meEnvio = context.request.parameters.custpage_me_env_dom;
-						objeto.tipoEnvioNombre = 'Envio a domicilio';
+						objeto.tipoEnvioNombre = 'ENVIO A DOMICILIO';
 						objeto.body = body;
 						arrayResumen.push(objeto);
 					}
@@ -551,20 +605,20 @@ function(serverWidget, https, runtime, utilities) {
 				let urlEnvioUrgDomicilio = `${url}?cpDestino=${cpDestino}&contrato=${contratoEnvioUrgDomicilioB2C}&bultos[0][volumen]=${volumen}&bultos[0][kilos]=${kilos}`;
 				let respEnvioUrgDomicilio = cotizarEnvio(urlEnvioUrgDomicilio, token);
 
-				if (!utilities.isEmpty(respEnvioDomicilio))
+				if (!utilities.isEmpty(respEnvioUrgDomicilio))
 				{
 					log.debug({
 						title: proceso,
 						details: `Respuesta cotizacion ID 2: ${respEnvioUrgDomicilio.body}`
 					});
 
-					if (respEnvioDomicilio.code == 200)
+					if (respEnvioUrgDomicilio.code == 200)
 					{
 						let body = JSON.parse(respEnvioUrgDomicilio.body);
 						let objeto = {};
 						objeto.tipoEnvio = 2;
 						objeto.meEnvio = context.request.parameters.custpage_me_env_urg_dom;
-						objeto.tipoEnvioNombre = 'Envio urgente a domicilio';
+						objeto.tipoEnvioNombre = 'ENVIO URGENTE A DOMICILIO';
 						objeto.body = body;
 						arrayResumen.push(objeto);
 					}
@@ -587,7 +641,7 @@ function(serverWidget, https, runtime, utilities) {
 						let objeto = {};
 						objeto.tipoEnvio = 3;
 						objeto.meEnvio = context.request.parameters.custpage_me_env_suc;
-						objeto.tipoEnvioNombre = 'Envio a sucursal';
+						objeto.tipoEnvioNombre = 'ENVIO A SUCURSAL';
 						objeto.body = body;
 						arrayResumen.push(objeto);	
 					}

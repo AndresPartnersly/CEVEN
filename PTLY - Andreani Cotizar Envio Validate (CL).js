@@ -20,7 +20,9 @@ function(currentRecord, url, dialog, query, search) {
 
         var process = 'Validar Cotización Envio Andreani - saveRecord';
 
-        log.audit(process,'INICIO');
+        //log.audit(process,'INICIO');
+
+        nlapiLogExecution('AUDIT', process, 'INICIO');
 
         var record = scriptContext.currentRecord;
 
@@ -32,7 +34,7 @@ function(currentRecord, url, dialog, query, search) {
             fieldId: 'subtotal'
         });
 
-        log.debug(process,'scriptContext: '+JSON.stringify(scriptContext)+' - scriptContext: '+ JSON.stringify(scriptContext)+ ' - valorDeclaradoAndreani: '+valorDeclaradoAndreani+ ' - subtotal: '+subtotal);
+        nlapiLogExecution('DEBUG', process,'scriptContext: '+JSON.stringify(scriptContext)+' - scriptContext: '+ JSON.stringify(scriptContext)+ ' - valorDeclaradoAndreani: '+valorDeclaradoAndreani+ ' - subtotal: '+subtotal);
 
         if ((!isEmpty(subtotal) && !isEmpty(valorDeclaradoAndreani)) && (subtotal != valorDeclaradoAndreani))
         {
@@ -49,7 +51,7 @@ function(currentRecord, url, dialog, query, search) {
         {
             return true;
         }
-        log.audit(process,'FIN');
+        nlapiLogExecution('AUDIT', process,'FIN');
     }
 
 

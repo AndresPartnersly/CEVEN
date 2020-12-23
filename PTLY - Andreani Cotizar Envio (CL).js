@@ -53,6 +53,16 @@ function(currentRecord, url, dialog, query, search) {
                         fieldId: 'custpage_sucandreani_reg',
                         value: arraySucursal[0].region
                     });
+
+                    objRecord.setValue({
+                        fieldId: 'custpage_suc_id',
+                        value: arraySucursal[0].sucId
+                    });
+
+                    objRecord.setValue({
+                        fieldId: 'custpage_cod_post_suc',
+                        value: arraySucursal[0].codigoPostal
+                    });
                 }
             }
             else
@@ -122,6 +132,7 @@ function(currentRecord, url, dialog, query, search) {
             objeto.calleNro = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[3]);
             objeto.localidad = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[4]);
             objeto.region = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[5]);
+            objeto.sucId = ssSucursalRunRange[j].getValue(ssSucursalRun.columns[6]);
             arraySS.push(objeto);
         }
 
@@ -153,11 +164,11 @@ function(currentRecord, url, dialog, query, search) {
             fieldId: "entity"
         });
 
-        alert('entity: '+entity+' - catClienteParams: '+catClienteParams);
+        //alert('entity: '+entity+' - catClienteParams: '+catClienteParams);
 
         var validEntity = validarCategoryCustomer(entity, catClienteParams)
 
-        alert('entity: '+entity+' - catClienteParams: '+catClienteParams+ " - validEntity: "+validEntity);
+        //alert('entity: '+entity+' - catClienteParams: '+catClienteParams+ " - validEntity: "+validEntity);
 
         if (!isEmpty(validEntity) && validEntity)
         {
@@ -483,14 +494,23 @@ function(currentRecord, url, dialog, query, search) {
                                 var addr1 = calle + ' ' + calleNro;
                                 var city = nlapiGetFieldValue('custpage_sucandreani_loc');
                                 var state = nlapiGetFieldValue('custpage_sucandreani_reg');
-                                var zip = nlapiGetFieldValue('custpage_codpostal');
+                                var zip = nlapiGetFieldValue('custpage_cod_post_suc');
+                                var sucId = nlapiGetFieldValue('custpage_suc_id');
 
+                                //window.opener.nlapiSetFieldValue('shipaddresslist','-2');
                                 window.opener.nlapiSetFieldValue('shipaddress', '');
                                 window.opener.nlapiSetFieldValue('shipoverride', 'F');
                                 window.opener.nlapiSetFieldValue('shipaddr1', addr1);
                                 window.opener.nlapiSetFieldValue('shipcity', city);
                                 window.opener.nlapiSetFieldValue('shipstate', state);
                                 window.opener.nlapiSetFieldValue('shipzip', zip);
+                                window.opener.nlapiSetFieldValue('custbody_ptly_suc_id_andreani', sucId);
+                                window.opener.nlapiSetFieldValue('shipoverride', 'T');
+                                window.opener.nlapiSetFieldValue('shipoverride', 'F');
+                            }
+                            else
+                            {
+                                window.opener.nlapiSetFieldValue('custbody_ptly_suc_id_andreani', '');
                             }
                             
                             var shippingCost = parseFloat(shippingCostAux,10) / parseFloat(exchangeRate,10);
@@ -498,6 +518,13 @@ function(currentRecord, url, dialog, query, search) {
                             window.opener.nlapiSetFieldValue('shippingcost', shippingCost);
                             window.opener.nlapiSetFieldValue('custbody_ptly_valor_declarado_andreani',subtotal);
                             window.opener.nlapiSetFieldValue('custbody_ptly_contrato_andreani',idContrato);
+
+                            /*var message = {
+                                title: title,
+                                message: "Por favor, valide los datos de la nueva direccion destino reemplazada"
+                            };
+
+                            dialog.alert(message);*/  
                             window.close();
                         }
                     }
@@ -549,7 +576,7 @@ function(currentRecord, url, dialog, query, search) {
     {
         var strSQL = "SELECT \n Customer.\"CATEGORY\" AS categoryRAW /*{category#RAW}*/\nFROM \n Customer\nWHERE \n Customer.\"ID\" = "+ entity +"\n";
 
-        alert(strSQL);
+        //alert(strSQL);
 
         var objPagedData = query.runSuiteQLPaged({
             query: strSQL,
