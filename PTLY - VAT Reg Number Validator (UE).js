@@ -1,156 +1,211 @@
 /**
- * @NApiVersion 2.x
- * @NScriptType ClientScript
+ * @NApiVersion 2.1
+ * @NAmdConfig /SuiteScripts/configuration.json
+ * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/search', 'N/ui/message', 'N/ui/dialog'],
+define(['N/error'],
 
-function(search, message, dialog) {
-    
+function(error) {
+   
     /**
-     * Function to be executed when field is changed.
+     * Function definition to be triggered before record is loaded.
      *
      * @param {Object} scriptContext
-     * @param {Record} scriptContext.currentRecord - Current form record
-     * @param {string} scriptContext.sublistId - Sublist name
-     * @param {string} scriptContext.fieldId - Field name
-     * @param {number} scriptContext.lineNum - Line number. Will be undefined if not a sublist or matrix field
-     * @param {number} scriptContext.columnNum - Line number. Will be undefined if not a matrix field
-     *
-     * @since 2015.2
+     * @param {Record} scriptContext.newRecord - New record
+     * @param {string} scriptContext.type - Trigger type
+     * @param {Form} scriptContext.form - Current form
+     * @Since 2015.2
      */
-    function fieldChanged(scriptContext) {
+    function beforeLoad(scriptContext) {
 
-        var process = 'VAT Reg Number Validator - fieldChanged';
-        var vatregnumber = '';
+        /*const proceso = 'Andreani Cotizar Envio - beforeLoad';
 
-        log.audit(process,'INICIO');
+        log.audit(proceso, 'INICIO');
 
-        log.debug(process,'scriptContext: '+JSON.stringify(scriptContext)+' - scriptContext: '+ JSON.stringify(scriptContext));
+        const newRecord = scriptContext.newRecord;
 
-        var record = scriptContext.currentRecord;
-        var recId = record.id;
+        const entity = newRecord.getValue({
+            fieldId: 'entity'
+        });
 
-        // SI EL CAMBIO ES SOBRE EL CAMPO VAT REG NUMBER / TAX NUMBER
-        if (scriptContext.fieldId == 'vatregnumber')
+        let validEntity = false;
+
+        const dataParams = getParams();
+
+        log.debug(proceso, 'dataParams: '+JSON.stringify(dataParams)+' - entity: '+entity);
+
+        if (!utilities.isEmpty(entity))
         {
-            // SE TOMA EL VAT REG NUMBER / TAX NUMBER Y SE LE RETIRA CUALQUIER CARACTER NO NUMERICO
-            vatregnumber = record.getValue({
-                fieldId: 'vatregnumber'
-            }).replace(/\D/g,"");
+            let strSQL = "SELECT \n Customer.\"CATEGORY\" AS categoryRAW \nFROM \n Customer\nWHERE \n Customer.\"ID\" = "+ entity +"\n";
 
-            log.debug(process, 'vatregnumber.length: '+vatregnumber.length);
+            let objPagedData = query.runSuiteQLPaged({
+                query: strSQL,
+                pageSize: 1
+            });
 
-            if (!isEmpty(vatregnumber))
+            // Paging 
+            let arrResults = [];
+            
+            objPagedData.pageRanges.forEach(function(pageRange) {
+                //fetch
+                let objPage = objPagedData.fetch({ index: pageRange.index }).data;
+                // Map results to columns 
+                arrResults.push.apply(arrResults, objPage.asMappedResults());
+            });
+
+            log.debug({
+                title: proceso,
+                details: `arrResults: ${JSON.stringify(arrResults)}`
+            })
+
+            if (!utilities.isEmpty(arrResults) && arrResults.length > 0)
             {
-                // SE VALIDA SI ES UN VAT REG NUMBER OK PARA USAR
-                var validTaxNumber = existeTaxNumber(vatregnumber, recId);
+                const customerCategory = arrResults[0].categoryraw;
 
-                log.debug(process, 'vatregnumber: '+vatregnumber + " - validTaxNumber: " + validTaxNumber);
-
-                // SE ACTUALIZA EL VAT REG NUMBER EN EL CAMPO DE NETSUITE Y CAMPO DE LOCALIZACIONES
-                record.setValue({
-                    fieldId: 'vatregnumber',
-                    value: vatregnumber,
-                    ignoreFieldChange: true
-                });
-
-                record.setValue({
-                    fieldId: 'custentity_l54_cuit_entity',
-                    value: vatregnumber,
-                    ignoreFieldChange: true
-                });
-
-                if (!validTaxNumber)
+                if (!utilities.isEmpty(dataParams.categoriaCliente) && dataParams.categoriaCliente == customerCategory)
                 {
-                    var myMsg = message.create({
-                        title: "Alerta",
-                        message: "VAT Reg Number ingresado ya existe y no se podrá almacenar en NetSuite",
-                        type: message.Type.WARNING,
-                    });
-                    myMsg.show({
-                        duration: 4000
-                    });
+                    validEntity = true;
                 }
             }
+
+            log.debug({
+                title: proceso,
+                details: `validEntity: ${validEntity}`
+            })
         }
-        log.audit(process,'FIN');
+        else
+        {
+            validEntity = true;
+        }
+
+        if ((scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT || scriptContext.type == scriptContext.UserEventType.COPY) && validEntity)
+        {
+            let form = scriptContext.form;
+
+            form.clientScriptModulePath = './PTLY - Andreani Cotizar Envio (CL).js';
+
+            form.addButton({
+                id: 'custpage_call_stl',
+                label: 'Cotizador Andreani',
+                functionName: 'callPopUp()'
+            });
+
+            //CODIGO CLIENTE ANDREANI
+            let custpage_empresaTransporte = form.addField({
+                id:'custpage_empresatransporte',
+                label:'Andreani Empresa Transportista',
+                type: serverWidget.FieldType.TEXT
+            });
+
+            custpage_empresaTransporte.updateDisplayType({
+                displayType: serverWidget.FieldDisplayType.HIDDEN
+            });	
+
+            custpage_empresaTransporte.defaultValue = dataParams.empresaTransporte;
+
+            //CATEGORIA CLIENTE PERMITIDAD POPUP
+            let custpage_catclientepermitida = form.addField({
+                id:'custpage_catclientepermitida',
+                label:'Categoria Cliente Permitida',
+                type: serverWidget.FieldType.TEXT
+            });
+
+            custpage_catclientepermitida.updateDisplayType({
+                displayType: serverWidget.FieldDisplayType.HIDDEN
+            });	
+
+            custpage_catclientepermitida.defaultValue = dataParams.categoriaCliente;
+        }
+        log.audit(proceso, 'FIN');*/
     }
 
     /**
-     * Validation function to be executed when record is saved.
+     * Function definition to be triggered before record is loaded.
      *
      * @param {Object} scriptContext
-     * @param {Record} scriptContext.currentRecord - Current form record
-     * @returns {boolean} Return true if record is valid
-     *
-     * @since 2015.2
+     * @param {Record} scriptContext.newRecord - New record
+     * @param {Record} scriptContext.oldRecord - Old record
+     * @param {string} scriptContext.type - Trigger type
+     * @Since 2015.2
      */
-    function saveRecord(scriptContext) {
+    function beforeSubmit(scriptContext) {
 
-        var process = 'VAT Reg Number Validator - saveRecord';
-        var vatregnumber = '';
+        const process = 'VAT Reg Number Validator - beforeSubmit';
 
         log.audit(process,'INICIO');
 
-        log.debug(process,'scriptContext: '+JSON.stringify(scriptContext));
+        const newRecord = scriptContext.newRecord;
+        const recId = newRecord.id;
 
-        var record = scriptContext.currentRecord;
-        var recId = record.id;
-
-        vatregnumber = record.getValue({
+        let vatregnumber = newRrecord.getValue({
             fieldId: 'vatregnumber'
         });
 
+        log.debug(process, 'vatregnumber.length: '+vatregnumber.length);
+
         if (!isEmpty(vatregnumber))
         {
-            // SE VALIDA SI ES UN VAT REG NUMBER OK PARA USAR
-            var validTaxNumber = existeTaxNumber(vatregnumber, recId);
+            let vatregnumberNew = limpiarTaxNumber(vatregnumber);
 
-            log.debug(process, 'vatregnumber: '+ vatregnumber +' - validTaxNumber: '+validTaxNumber);
+            let validTaxNumber = existeTaxNumber(vatregnumberNew, recId);
 
-            // SE ACTUALIZA EL VAT REG NUMBER EN EL CAMPO DE NETSUITE Y CAMPO DE LOCALIZACIONES
-            record.setValue({
+            log.debug(process, 'vatregnumber: '+vatregnumber + ' - validTaxNumber: ' + validTaxNumber + ' - vatregnumberNew: ' + vatregnumberNew);
+
+            newRecord.setValue({
                 fieldId: 'vatregnumber',
-                value: vatregnumber,
-                ignoreFieldChange: true
+                value: vatregnumberNew/*,
+                ignoreFieldChange: true*/
             });
 
-            record.setValue({
+            newRecord.setValue({
                 fieldId: 'custentity_l54_cuit_entity',
-                value: vatregnumber,
-                ignoreFieldChange: true
+                value: vatregnumberNew/*,
+                ignoreFieldChange: true*/
             });
 
             if (!validTaxNumber)
             {
-                var myMsg = {
-                    title: "Alerta",
-                    message: "VAT Reg Number ingresado ya existe en NetSuite, debe cambiarlo",
-                    };
+                let errorMessage = error.create({
+                    name: "Alerta",
+                    message: 'VAT Reg Number ingresado ya existe en NetSuite, debe cambiarlo',
+                    notifyOff: false
+                });
 
-                dialog.alert(myMsg);
-
-                return false;
+                throw(errorMessage);
             }
-
-            return true;
-
         }
-        log.audit(process,'FIN');
     }
-    
 
-    function existeTaxNumber(taxNumber, idEntidad) {
+    /**
+     * Function definition to be triggered before record is loaded.
+     *
+     * @param {Object} scriptContext
+     * @param {Record} scriptContext.newRecord - New record
+     * @param {Record} scriptContext.oldRecord - Old record
+     * @param {string} scriptContext.type - Trigger type
+     * @Since 2015.2
+     */
+    function afterSubmit(scriptContext) {
 
-        var process = 'existeTaxNumber';
+    }
 
-        var ss = search.load({
+    let limpiarTaxNumber = (taxNumber) =>
+    {
+        return taxNumber.replace(/\D/g,"");
+    }
+
+    let existeTaxNumber = (taxNumber, idEntidad) =>
+    {
+
+        let process = 'existeTaxNumber';
+
+        let ss = search.load({
             id: 'customsearch_ptly_vat_regnumber_val_cust',
             type: search.Type.CUSTOMER
         });
 
-        var ssTaxNumberFilter = search.createFilter({
+        let ssTaxNumberFilter = search.createFilter({
             name: 'vatregnumber',
             operator: 'IS',
             values: taxNumber
@@ -158,9 +213,9 @@ function(search, message, dialog) {
 
         ss.filters.push(ssTaxNumberFilter);
 
-        var ssRun = ss.run();
+        let ssRun = ss.run();
 
-        var ssRunRange = ssRun.getRange({
+        let ssRunRange = ssRun.getRange({
             start: 0,
             end: 1
         });
@@ -171,7 +226,7 @@ function(search, message, dialog) {
         {
             if (!isEmpty(idEntidad)) // SI EL CLIENTE EXISTE
             {
-                var idInternoEntidadSS = ssRunRange[0].getValue(ssRun.columns[0]);
+                let idInternoEntidadSS = ssRunRange[0].getValue(ssRun.columns[0]);
 
                 log.debug(process, 'idInternoEntidadSS: '+idInternoEntidadSS + " - idEntidad: "+ idEntidad);
 
@@ -192,48 +247,10 @@ function(search, message, dialog) {
         return true;
     }
 
-
-    function isEmpty(value) {
-
-        if (value === '')
-        {
-            return true;
-        }
-
-        if (value === null)
-        {
-            return true;
-        }
-
-        if (value === undefined)
-        {
-            return true;
-        }
-        
-        if (value === 'undefined')
-        {
-            return true;
-        }
-
-        if (value === 'null')
-        {
-            return true;
-        }
-
-        return false;
-    }
-
     return {
-        //pageInit: pageInit,
-        fieldChanged: fieldChanged,
-        /*postSourcing: postSourcing,
-        sublistChanged: sublistChanged,
-        lineInit: lineInit,
-        validateField: validateField,
-        validateLine: validateLine,
-        validateInsert: validateInsert,
-        validateDelete: validateDelete,*/
-        saveRecord: saveRecord
+        //beforeLoad: beforeLoad,
+        beforeSubmit: beforeSubmit
+        //afterSubmit: afterSubmit
     };
     
 });

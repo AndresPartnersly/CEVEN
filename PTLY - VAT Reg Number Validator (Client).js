@@ -42,21 +42,23 @@ function(search, message, dialog) {
 
             if (!isEmpty(vatregnumber))
             {
-                // SE VALIDA SI ES UN VAT REG NUMBER OK PARA USAR
-                var validTaxNumber = existeTaxNumber(limpiarTaxNumber(vatregnumber), recId);
+                var vatregnumberNew = limpiarTaxNumber(vatregnumber);
 
-                log.debug(process, 'vatregnumber: '+vatregnumber + " - validTaxNumber: " + validTaxNumber);
+                // SE VALIDA SI ES UN VAT REG NUMBER OK PARA USAR
+                var validTaxNumber = existeTaxNumber(vatregnumberNew, recId);
+
+                log.debug(process, 'vatregnumber: '+vatregnumber + ' - validTaxNumber: ' + validTaxNumber + ' - vatregnumberNew: ' + vatregnumberNew);
 
                 // SE ACTUALIZA EL VAT REG NUMBER EN EL CAMPO DE NETSUITE Y CAMPO DE LOCALIZACIONES
                 record.setValue({
                     fieldId: 'vatregnumber',
-                    value: vatregnumber,
+                    value: vatregnumberNew,
                     ignoreFieldChange: true
                 });
 
                 record.setValue({
                     fieldId: 'custentity_l54_cuit_entity',
-                    value: vatregnumber,
+                    value: vatregnumberNew,
                     ignoreFieldChange: true
                 });
 
@@ -103,21 +105,23 @@ function(search, message, dialog) {
         
         if (!isEmpty(vatregnumber))
         {
-            // SE VALIDA SI ES UN VAT REG NUMBER OK PARA USAR
-            var validTaxNumber = existeTaxNumber(limpiarTaxNumber(vatregnumber), recId);
+            var vatregnumberNew = limpiarTaxNumber(vatregnumber);
 
-            log.debug(process, 'vatregnumber: '+ vatregnumber +' - validTaxNumber: '+validTaxNumber);
+            // SE VALIDA SI ES UN VAT REG NUMBER OK PARA USAR
+            var validTaxNumber = existeTaxNumber(vatregnumberNew, recId);
+
+            log.debug(process, 'vatregnumber: '+ vatregnumber +' - validTaxNumber: '+validTaxNumber+ ' - vatregnumberNew: '+ vatregnumberNew);
 
             // SE ACTUALIZA EL VAT REG NUMBER EN EL CAMPO DE NETSUITE Y CAMPO DE LOCALIZACIONES
             record.setValue({
                 fieldId: 'vatregnumber',
-                value: vatregnumber,
+                value: vatregnumberNew,
                 ignoreFieldChange: true
             });
 
             record.setValue({
                 fieldId: 'custentity_l54_cuit_entity',
-                value: vatregnumber,
+                value: vatregnumberNew,
                 ignoreFieldChange: true
             });
 
