@@ -247,6 +247,36 @@ function(error) {
         return true;
     }
 
+    let isEmpty = (value) => {
+
+        if (value === '')
+        {
+            return true;
+        }
+
+        if (value === null)
+        {
+            return true;
+        }
+
+        if (value === undefined)
+        {
+            return true;
+        }
+        
+        if (value === 'undefined')
+        {
+            return true;
+        }
+
+        if (value === 'null')
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     return {
         //beforeLoad: beforeLoad,
         beforeSubmit: beforeSubmit
