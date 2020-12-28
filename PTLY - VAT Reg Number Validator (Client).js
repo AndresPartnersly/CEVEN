@@ -22,7 +22,6 @@ function(search, message, dialog) {
     function fieldChanged(scriptContext) {
 
         var process = 'VAT Reg Number Validator - fieldChanged';
-        var vatregnumber = '';
 
         log.audit(process,'INICIO');
 
@@ -35,16 +34,16 @@ function(search, message, dialog) {
         if (scriptContext.fieldId == 'vatregnumber')
         {
             // SE TOMA EL VAT REG NUMBER / TAX NUMBER Y SE LE RETIRA CUALQUIER CARACTER NO NUMERICO
-            vatregnumber = record.getValue({
+            var vatregnumber = record.getValue({
                 fieldId: 'vatregnumber'
-            }).replace(/\D/g,"");
+            });
 
             log.debug(process, 'vatregnumber.length: '+vatregnumber.length);
 
             if (!isEmpty(vatregnumber))
             {
                 // SE VALIDA SI ES UN VAT REG NUMBER OK PARA USAR
-                var validTaxNumber = existeTaxNumber(vatregnumber, recId);
+                var validTaxNumber = existeTaxNumber(limpiarTaxNumber(vatregnumber), recId);
 
                 log.debug(process, 'vatregnumber: '+vatregnumber + " - validTaxNumber: " + validTaxNumber);
 
@@ -89,7 +88,6 @@ function(search, message, dialog) {
     function saveRecord(scriptContext) {
 
         var process = 'VAT Reg Number Validator - saveRecord';
-        var vatregnumber = '';
 
         log.audit(process,'INICIO');
 
@@ -98,14 +96,15 @@ function(search, message, dialog) {
         var record = scriptContext.currentRecord;
         var recId = record.id;
 
-        vatregnumber = record.getValue({
+        var vatregnumber = record.getValue({
             fieldId: 'vatregnumber'
         });
 
+        
         if (!isEmpty(vatregnumber))
         {
             // SE VALIDA SI ES UN VAT REG NUMBER OK PARA USAR
-            var validTaxNumber = existeTaxNumber(vatregnumber, recId);
+            var validTaxNumber = existeTaxNumber(limpiarTaxNumber(vatregnumber), recId);
 
             log.debug(process, 'vatregnumber: '+ vatregnumber +' - validTaxNumber: '+validTaxNumber);
 
@@ -139,7 +138,12 @@ function(search, message, dialog) {
         }
         log.audit(process,'FIN');
     }
-    
+
+
+    function limpiarTaxNumber(taxNumber)
+    {
+        return taxNumber.replace(/\D/g,"");
+    }
 
     function existeTaxNumber(taxNumber, idEntidad) {
 
