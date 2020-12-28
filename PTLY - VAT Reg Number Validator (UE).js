@@ -4,9 +4,9 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/error'],
+define(['N/error', 'N/search'],
 
-function(error) {
+function(error, search) {
    
     /**
      * Function definition to be triggered before record is loaded.
@@ -135,10 +135,12 @@ function(error) {
 
         log.audit(process,'INICIO');
 
+        log.debug(process,'scriptContext: '+JSON.stringify(scriptContext)+' - scriptContext: '+ JSON.stringify(scriptContext));
+
         const newRecord = scriptContext.newRecord;
         const recId = newRecord.id;
 
-        let vatregnumber = newRrecord.getValue({
+        let vatregnumber = newRecord.getValue({
             fieldId: 'vatregnumber'
         });
 
@@ -150,7 +152,7 @@ function(error) {
 
             let validTaxNumber = existeTaxNumber(vatregnumberNew, recId);
 
-            log.debug(process, 'vatregnumber: '+vatregnumber + ' - validTaxNumber: ' + validTaxNumber + ' - vatregnumberNew: ' + vatregnumberNew);
+            log.debug(process, 'recId: '+ recId +' - vatregnumber: '+vatregnumber + ' - validTaxNumber: ' + validTaxNumber + ' - vatregnumberNew: ' + vatregnumberNew);
 
             newRecord.setValue({
                 fieldId: 'vatregnumber',
@@ -168,13 +170,14 @@ function(error) {
             {
                 let errorMessage = error.create({
                     name: "Alerta",
-                    message: 'VAT Reg Number ingresado ya existe en NetSuite, debe cambiarlo',
+                    message: `VAT Reg Number ingresado ya existe en NetSuite: ${vatregnumberNew}, debe cambiarlo`,
                     notifyOff: false
                 });
 
                 throw(errorMessage);
             }
         }
+        log.audit(process,'FIN');
     }
 
     /**

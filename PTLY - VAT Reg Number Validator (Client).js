@@ -129,7 +129,7 @@ function(search, message, dialog) {
             {
                 var myMsg = {
                     title: "Alerta",
-                    message: "VAT Reg Number ingresado ya existe en NetSuite, debe cambiarlo",
+                    message: "VAT Reg Number ingresado ya existe en NetSuite "+ vatregnumberNew +", debe cambiarlo",
                     };
 
                 dialog.alert(myMsg);
