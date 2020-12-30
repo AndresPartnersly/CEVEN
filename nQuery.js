@@ -5,7 +5,7 @@ require(['N/query'], function(query) {
 
         var myLoadedQuery = query.load({
 
-            id: 'custdataset17'
+            id: 'custdataset18'
         });
 
         var squery = myLoadedQuery.toSuiteQL();

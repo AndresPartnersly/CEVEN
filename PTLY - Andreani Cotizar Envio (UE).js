@@ -87,11 +87,11 @@ function(serverWidget, query, runtime, utilities) {
 
             form.addButton({
                 id: 'custpage_call_stl',
-                label: 'Cotizador Andreani',
+                label: 'Cotizador Correo Andreani',
                 functionName: 'callPopUp()'
             });
 
-            //CODIGO CLIENTE ANDREANI
+            //EMPRESA TRANSPORTISTA CLIENTE ANDREANI
             let custpage_empresaTransporte = form.addField({
                 id:'custpage_empresatransporte',
                 label:'Andreani Empresa Transportista',
@@ -99,7 +99,7 @@ function(serverWidget, query, runtime, utilities) {
             });
 
             custpage_empresaTransporte.updateDisplayType({
-                displayType: serverWidget.FieldDisplayType.HIDDEN
+                displayType: serverWidget.FieldDisplayType.INLINE
             });	
 
             custpage_empresaTransporte.defaultValue = dataParams.empresaTransporte;
@@ -112,7 +112,7 @@ function(serverWidget, query, runtime, utilities) {
             });
 
             custpage_catclientepermitida.updateDisplayType({
-                displayType: serverWidget.FieldDisplayType.HIDDEN
+                displayType: serverWidget.FieldDisplayType.INLINE
             });	
 
             custpage_catclientepermitida.defaultValue = dataParams.categoriaCliente;
