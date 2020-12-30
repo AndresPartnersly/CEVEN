@@ -559,7 +559,6 @@ function(query, utilities, https, search, runtime, query) {
             return false;
         }
     }
-
 	    
 	let crearOrdenEnvio = (urlReq, tokenReq, bodyReq) => {
 

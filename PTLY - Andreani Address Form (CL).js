@@ -17,19 +17,19 @@ function(currentRecord, url, dialog, query, search, https) {
                 fieldId: 'state'
             });
 
-            console.log('getProvincia - LINE 20 - state: '+state);
+            alert('getProvincia - LINE 20 - state: '+state);
 
             if (!isEmpty(state))
             {
                 var idState = getIdState(state);
 
-                console.log('getProvincia - LINE 26 - idState: '+idState);
+                alert('getProvincia - LINE 26 - idState: '+idState);
 
                 if (!isEmpty(idState))
                 {
                     var idProvincia = getProvincia(idState);
 
-                    console.log('getProvincia - LINE 32 - idProvincia: '+idProvincia);
+                    alert('getProvincia - LINE 32 - idProvincia: '+idProvincia);
 
                     if (!isEmpty(idProvincia))
                     {   
@@ -40,15 +40,15 @@ function(currentRecord, url, dialog, query, search, https) {
                     }
                     else
                     {
-                        console.log('fieldChanged - LINE 42 - No se pudo completar la provincia porque se obtuvo un valor nulo para la misma');
+                        alert('fieldChanged - LINE 42 - No se pudo completar la provincia porque se obtuvo un valor nulo para la misma');
                     }
                 }
                 else
                 {
-                    console.log('fieldChanged - LINE 47 - No se pudo completar la provincia porque se obtuvo un valor nulo para el estado');
+                    alert('fieldChanged - LINE 47 - No se pudo completar la provincia porque se obtuvo un valor nulo para el estado');
                 }
             }
-            console.log('getProvincia - LINE 43');
+            alert('getProvincia - LINE 43');
         }
     }
 
@@ -58,7 +58,7 @@ function(currentRecord, url, dialog, query, search, https) {
         var strSQL = "SELECT \n CUSTOMRECORD_L54_SIC_CODIGO_PROVINCIA.\"ID\" AS idprovincia, \n CUSTOMRECORD_L54_SIC_CODIGO_PROVINCIA.name AS nameprovincia \nFROM \n CUSTOMRECORD_L54_SIC_CODIGO_PROVINCIA\nWHERE \n CUSTOMRECORD_L54_SIC_CODIGO_PROVINCIA.custrecord_l54_sic_codigo_prov_provincia = "+ state +"\n";
         var idProvincia = null;
 
-        console.log('getProvincia - LINE 53 - strSQL: '+strSQL);
+        alert('getProvincia - LINE 53 - strSQL: '+strSQL);
 
         try
         {
@@ -85,7 +85,7 @@ function(currentRecord, url, dialog, query, search, https) {
         }
         catch(e)
         {
-            console.log('getProvincia - Error inesperado a determinar el id de la provincia - Detalles: '+JSON.stringify(e));
+            alert('getProvincia - Error inesperado a determinar el id de la provincia - Detalles: '+JSON.stringify(e));
         }
     }
 
@@ -121,7 +121,7 @@ function(currentRecord, url, dialog, query, search, https) {
         }
         catch(e)
         {
-            console.log('getIdState - Error inesperado a determinar el id del estado - Detalles: '+JSON.stringify(e));
+            alert('getIdState - Error inesperado a determinar el id del estado - Detalles: '+JSON.stringify(e));
         }
 
         return idState;

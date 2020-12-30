@@ -189,7 +189,8 @@ function(serverWidget, https, runtime, utilities) {
 				displayType: serverWidget.FieldDisplayType.INLINE
 			});
 
-			custpage_volumen.defaultValue = parseFloat(100,10);
+			if (!utilities.isEmpty(context.request.parameters.volumenDeclarado))
+				custpage_volumen.defaultValue = parseFloat(context.request.parameters.volumenDeclarado,10);
 
 			//DIRECCION DESTINO
 			let custpage_direccion = form.addField({
@@ -389,7 +390,7 @@ function(serverWidget, https, runtime, utilities) {
 				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});
 
-            let custpage_resumen_json = form.addField({
+            /*let custpage_resumen_json = form.addField({
                 id: 'custpage_resumen_json',
                 type: serverWidget.FieldType.TEXTAREA,
                 label: 'Cotización por tipo de servicio JSON',
@@ -409,7 +410,7 @@ function(serverWidget, https, runtime, utilities) {
 
 			custpage_resumen_json_suc.updateDisplayType({
                 displayType: serverWidget.FieldDisplayType.NORMAL
-			});
+			});*/
 
 			let url = 'https://api.qa.andreani.com/login';
 			//SE GENERA TOKEN
@@ -444,13 +445,12 @@ function(serverWidget, https, runtime, utilities) {
 					if (respEnvioDomicilio.code == 200)
 					{
 						let body = JSON.parse(respEnvioDomicilio.body);
-						let objeto = {};
+						/*let objeto = {};
 						objeto.tipoEnvio = 1;
 						objeto.meEnvio = context.request.parameters.custpage_me_env_dom;
 						objeto.tipoEnvioNombre = 'ENVIO A DOMICILIO';
 						objeto.body = body;
-						arrayResumen.push(objeto);
-
+						arrayResumen.push(objeto);*/
 						custpage_tarifa_dom.defaultValue = `AR$ ${parseFloat(body.tarifaSinIva.total,10)}`;
 					}
 				}
@@ -469,17 +469,17 @@ function(serverWidget, https, runtime, utilities) {
 					if (respEnvioUrgDomicilio.code == 200)
 					{
 						let body = JSON.parse(respEnvioUrgDomicilio.body);
-						let objeto = {};
+						/*let objeto = {};
 						objeto.tipoEnvio = 2;
 						objeto.meEnvio = context.request.parameters.custpage_me_env_urg_dom;
 						objeto.tipoEnvioNombre = 'ENVIO URGENTE A DOMICILIO';
 						objeto.body = body;
-						arrayResumen.push(objeto);
+						arrayResumen.push(objeto);*/
 						custpage_tarifa_dom_urg.defaultValue = `AR$ ${parseFloat(body.tarifaSinIva.total,10)}`;
 					}
 				}
 
-				log.debug({
+				/*log.debug({
 					title: proceso,
 					details: JSON.stringify(arrayResumen)
 				});
@@ -503,8 +503,8 @@ function(serverWidget, https, runtime, utilities) {
 					}
 					tablehtml += '</tbody></table>';
 					//custpage_resumen.defaultValue = tablehtml;
-					custpage_resumen_json.defaultValue = JSON.stringify(arrayResumen);
-				}
+					//custpage_resumen_json.defaultValue = JSON.stringify(arrayResumen);
+				}*/
 
 				form.addField({
 					id: 'custpage_radio',
