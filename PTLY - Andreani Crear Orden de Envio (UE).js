@@ -51,8 +51,6 @@ function(query, utilities, https, search, runtime, query) {
                 fieldId: 'custbody_ptly_contrato_andreani'
             });
 
-            contrato = '300006611';
-
             let sucId = newRecord.getValue({
                 fieldId: 'custbody_ptly_suc_id_andreani'
             });
@@ -109,7 +107,6 @@ function(query, utilities, https, search, runtime, query) {
                                 if (((!utilities.isEmpty(shipstatusOR) && !utilities.isEmpty(shipstatusNR)) && (shipstatusOR == 'A' && shipstatusNR == 'B')) || ((utilities.isEmpty(shipstatusOR) && !utilities.isEmpty(shipstatusNR) && shipstatusNR == 'B')))
                                 {
                                     let expReg = /[^0-9.]+/g;
-                                    //let contrato = '400006709';
                                     let location;
                                     let cantItems;
                                     let cantPackage;
@@ -238,6 +235,9 @@ function(query, utilities, https, search, runtime, query) {
                                                             let bultosObjet = {};
                                                             bultosObjet.kilos = arrayPackage[i].kilos;
                                                             bultosObjet.volumenCm = arrayPackage[i].kilos;
+                                                            bultosObjet.largoCm = 25;//arrayPackage[i].kilos;
+                                                            bultosObjet.altoCm = 23;//arrayPackage[i].kilos;
+                                                            bultosObjet.anchoCm = 30//arrayPackage[i].kilos;
                                                             bodyRequest.bultos.push(bultosObjet);
                                                         }
                             
@@ -245,61 +245,82 @@ function(query, utilities, https, search, runtime, query) {
                                                             title: proceso,
                                                             details: `245 - bodyRequest: ${JSON.stringify(bodyRequest)}`
                                                         });
+
+                                                        newRecord.setValue({
+                                                            fieldId: 'custbody_ptly_request_andreani',
+                                                            value: JSON.stringify(bodyRequest)
+                                                        });
                             
-                                                        let url = `https://api.qa.andreani.com/v2/ordenes-de-envio`;
+                                                        let url = `https://api.andreani.com/v2/ordenes-de-envio`;
                                                         log.debug(proceso, `249 - INICIO - time ${new Date()}`);
-                                                        let token = utilities.generarToken('https://api.qa.andreani.com/login');
-                                                        log.debug(proceso, `251 - FIN - time ${new Date()}`);
-                            
-                                                        log.debug(proceso, `253 - INICIO - time ${new Date()}`);
-                                                        let respCrearOE = crearOrdenEnvio(url, token, bodyRequest);
-                                                        log.debug(proceso, `255 - FIN - time ${new Date()}`);
+                                                        let token = utilities.generarToken('https://api.andreani.com/login');
+                                                        log.debug(proceso, `251 - FIN - time ${new Date()} - token: ${token}`);
 
-                                                        log.debug(proceso, `257 - respCrearOE ${JSON.stringify(respCrearOE)}`);
-                            
-                                                        if (!utilities.isEmpty(respCrearOE))
-                                                        {   
-                                                            if (respCrearOE.code == 200 || respCrearOE.code == 202)
-                                                            {
-                                                                let body = JSON.parse(respCrearOE.body);
-                                                                let arrayBultos = [];
-
-                                                                if (!utilities.isEmpty(body.bultos))
-                                                                {
-                                                                    for (let i =0; i < body.bultos.length; i++)
-                                                                    {
-                                                                        let objeto = {};
-                                                                        objeto.numeroDeBulto = body.bultos[i].numeroDeBulto;
-                                                                        objeto.numeroDeEnvio = body.bultos[i].numeroDeEnvio;
-                                                                        arrayBultos.push(objeto);
-                                                                    }
-                                                                }
-
-                                                                log.debug(proceso, `277 - arrayBultos ${JSON.stringify(arrayBultos)}`);
-                                                                
-                                                                if (!utilities.isEmpty(arrayBultos) && body.bultos.length > 0 && cantPackage == body.bultos.length)
-                                                                {
-                                                                    log.debug(proceso, `281 - INICIO - time ${new Date()}`);
-                                                                    let response = setAndreaniResponse(cantPackage, newRecord, arrayBultos);
-                                                                    log.debug(proceso, `283 - FIN - time ${new Date()}`);
-
-                                                                    if (response)
-                                                                    {
-                                                                        log.debug({
-                                                                            title: proceso,
-                                                                            details: `Orden de Envio Andreani generada correctamente`
-                                                                        });
-                                                                    }
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                log.error({
-                                                                    title: proceso,
-                                                                    details: `No se obtuvo una respuesta valida del servicio de creación de Orden de Envio Andreani - Codigo de error: ${respCrearOE.code}`
+                                                        if (!utilities.isEmpty(token))
+                                                        {
+                                                            log.debug(proceso, `253 - INICIO - time ${new Date()}`);
+                                                            let respCrearOE = crearOrdenEnvio(url, token, bodyRequest);
+                                                            log.debug(proceso, `255 - FIN - time ${new Date()}`);
+    
+                                                            log.debug(proceso, `257 - respCrearOE ${JSON.stringify(respCrearOE)}`);
+                                
+                                                            if (!utilities.isEmpty(respCrearOE))
+                                                            {   
+    
+                                                                newRecord.setValue({
+                                                                    fieldId: 'custbody_ptly_response_andreani',
+                                                                    value: JSON.stringify(respCrearOE)
                                                                 });
+    
+                                                                if (respCrearOE.code == 200 || respCrearOE.code == 202)
+                                                                {
+                                                                    let body = JSON.parse(respCrearOE.body);
+                                                                    let arrayBultos = [];
+    
+                                                                    if (!utilities.isEmpty(body.bultos))
+                                                                    {
+                                                                        for (let i =0; i < body.bultos.length; i++)
+                                                                        {
+                                                                            let objeto = {};
+                                                                            objeto.numeroDeBulto = body.bultos[i].numeroDeBulto;
+                                                                            objeto.numeroDeEnvio = body.bultos[i].numeroDeEnvio;
+                                                                            arrayBultos.push(objeto);
+                                                                        }
+                                                                    }
+    
+                                                                    log.debug(proceso, `277 - arrayBultos ${JSON.stringify(arrayBultos)}`);
+                                                                    
+                                                                    if (!utilities.isEmpty(arrayBultos) && body.bultos.length > 0 && cantPackage == body.bultos.length)
+                                                                    {
+                                                                        log.debug(proceso, `281 - INICIO - time ${new Date()}`);
+                                                                        let response = setAndreaniResponse(cantPackage, newRecord, arrayBultos);
+                                                                        log.debug(proceso, `283 - FIN - time ${new Date()}`);
+    
+                                                                        if (response)
+                                                                        {
+                                                                            log.debug({
+                                                                                title: proceso,
+                                                                                details: `Orden de Envio Andreani generada correctamente`
+                                                                            });
+                                                                        }
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    log.error({
+                                                                        title: proceso,
+                                                                        details: `No se obtuvo una respuesta valida del servicio de creación de Orden de Envio Andreani - Codigo de error: ${respCrearOE.code}`
+                                                                    });
+                                                                }
+    
                                                             }
-
+                                                        }
+                                                        else
+                                                        {
+                                                            log.error({
+                                                                title: proceso,
+                                                                details: `Error al generar el token para la autenticación con los servicios de Andreani`
+                                                            });
                                                         }
                                                     }
                                                     else
