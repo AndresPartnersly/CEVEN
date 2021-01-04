@@ -34,9 +34,41 @@ function(currentRecord, url, dialog, query, search, https) {
 
         if (!isEmpty(itemArray) && itemArray.length > 0)
         {
-            
 
+            var arrayPackages = [];
+        
+            if (itemSublist.length > 0)
+            {
+                for (var i=0; i < itemSublist.length; i++)
+                {
+
+                    var idItem = itemSublist[i].idItem;
+                    var quantityItem = itemSublist[i].quantityItem;
+
+                    var arrayTemporal =  itemArray.filter(function (elemento) {
+                                        
+                        if (elemento.idItem == idItem)
+                        {
+                            var objeto = {};
+                            objeto.indicePckg = i;
+                            objeto.pesoKg = elemento.pesoKg;
+                            objeto.largoCm = elemento.largoCm;
+                            objeto.anchoCm = elemento.anchoCm;
+                            objeto.altoCm = elemento.altoCm;
+                            objeto.dimensiones = elemento.largoCm +'x'+elemento.anchoCm+'x'+elemento.altoCm;
+                            objeto.volumenCm3 = elemento.volumenCm3;
+                            arrayPackages.push(objeto);
+                        }
+                    });
+                }
+                console.log('LINE 64 - arrayPackages: '+JSON.stringify(arrayPackages));
+            }
         }
+
+        var cantidadPckg = clearSublistPackage(record);
+
+        console.log('LINE 70 - cantidadPckg: '+cantidadPckg);
+
 
          
 
@@ -180,6 +212,34 @@ function(currentRecord, url, dialog, query, search, https) {
         console.log('arraySS: '+JSON.stringify(arraySS));
 
         return arraySS;
+    }
+
+
+    function clearSublistPackage(record)
+    {
+        var sublist = 'package';
+        var cantArticulos = record.getLineCount({
+            sublistId: sublist
+        });
+
+        console.log('LINE 220 - cantArticulos: '+cantArticulos);
+
+        for (var i=0; i < cantArticulos; i++)
+        {
+            record.removeLine({
+                sublistId: sublist,
+                line: 0
+            });
+        }
+
+        cantArticulos = record.getLineCount({
+            sublistId: sublist
+        });
+
+
+        console.log('LINE 235 - cantArticulos: '+cantArticulos);
+
+        return cantArticulos;
     }
 
 
