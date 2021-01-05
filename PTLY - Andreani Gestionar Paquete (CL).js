@@ -12,8 +12,7 @@ function(currentRecord, url, dialog, query, search, https) {
 
     }
 
-
-	function completarPackageSublist() {
+	function gestionarPackageSublist() {
 
         var proceso = 'Andreani Gestionar Paquete - Client';
 
@@ -21,71 +20,84 @@ function(currentRecord, url, dialog, query, search, https) {
 
         var record = currentRecord.get();
 
-        console.log('LINE 24');
-        var itemSublist = getSublistItemData(record);
-        console.log('LINE 26 - itemSublist: '+JSON.stringify(itemSublist));
+        var shipstatus = record.getValue({
+            fieldId: 'shipstatus'
+        });
 
-        if (!isEmpty(itemSublist) && itemSublist.length > 0)
+        if (!isEmpty(shipstatus) && shipstatus == 'B')
         {
-            console.log('LINE 30');
-            var itemArray = getItemData(itemSublist);
-            console.log('LINE 32 - itemArray: '+JSON.stringify(itemArray));
-        }
+            var message = {
+                title: title,
+                message: "El proceso puede demorar unos segundos mientras se calcula la información"
+            };
 
-        if (!isEmpty(itemArray) && itemArray.length > 0)
-        {
-
-            var arrayPackages = [];
-        
-            if (itemSublist.length > 0)
+            console.log('LINE 34 - record: '+JSON.stringify(record));
+            var itemSublist = getSublistItemData(record);
+            console.log('LINE 36 - itemSublist: '+JSON.stringify(itemSublist));
+    
+            if (!isEmpty(itemSublist) && itemSublist.length > 0)
             {
-                for (var i=0; i < itemSublist.length; i++)
-                {
+                console.log('LINE 40');
+                var itemArray = getItemData(itemSublist);
+                console.log('LINE 42 - itemArray: '+JSON.stringify(itemArray));
 
-                    var idItem = itemSublist[i].idItem;
-                    var quantityItem = itemSublist[i].quantityItem;
+                if (!isEmpty(itemArray) && itemArray.length > 0)
+                {   
+                    var arrayPackages = createArrayPackage(itemArray, itemSublist);
+                    console.log('LINE 47 - arrayPackages: '+JSON.stringify(arrayPackages));
 
-                    var arrayTemporal =  itemArray.filter(function (elemento) {
-                                        
-                        if (elemento.idItem == idItem)
-                        {
-                            var objeto = {};
-                            objeto.indicePckg = i;
-                            objeto.pesoKg = elemento.pesoKg;
-                            objeto.largoCm = elemento.largoCm;
-                            objeto.anchoCm = elemento.anchoCm;
-                            objeto.altoCm = elemento.altoCm;
-                            objeto.dimensiones = elemento.largoCm +'x'+elemento.anchoCm+'x'+elemento.altoCm;
-                            objeto.volumenCm3 = elemento.volumenCm3;
-                            arrayPackages.push(objeto);
-                        }
-                    });
+                    var cantidadPckg = clearSublistPackage(record);
+                    console.log('LINE 50 - cantidadPckg: '+cantidadPckg);
+
+                    if (!isEmpty(arrayPackages) && arrayPackages.length > 0)
+                    {
+                        completarPackageSublist(record, arrayPackages);
+                    }
                 }
-                console.log('LINE 64 - arrayPackages: '+JSON.stringify(arrayPackages));
             }
-        }
-
-        var cantidadPckg = clearSublistPackage(record);
-
-        console.log('LINE 70 - cantidadPckg: '+cantidadPckg);
-
-
-         
-
-        /*if (!isEmpty(validEntity) && validEntity)
-        {
-
         }
         else
         {
             var message = {
                 title: title,
-                message: "No se puede iniciar cotizador ya que el cliente seleccionado en la transacción no coincide con la categoría de cliente configurada ID: "+catClienteParams
+                message: "Para completar la sublista de Paquetes el estado de la transacción debe ser Embalado / Packing "
             };
-            dialog.alert(message);  
-        }*/
+            dialog.alert(message); 
+        }
     }
 
+    function createArrayPackage(itemArray, itemSublist)
+    {
+        var arrayPackages = [];
+
+        if (itemSublist.length > 0)
+        {
+            for (var i=0; i < itemSublist.length; i++)
+            {
+                var idItem = itemSublist[i].idItem;
+                var quantityItem = itemSublist[i].quantityItem;
+
+                var arrayTemporal =  itemArray.filter(function (elemento) {
+                                    
+                    if (elemento.idItem == idItem)
+                    {
+                        var objeto = {};
+                        objeto.indicePckg = i;
+                        objeto.pesoKg = elemento.pesoKg;
+                        objeto.largoCm = elemento.largoCm;
+                        objeto.anchoCm = elemento.anchoCm;
+                        objeto.altoCm = elemento.altoCm;
+                        objeto.dimensiones = elemento.largoCm +'x'+elemento.anchoCm+'x'+elemento.altoCm;
+                        objeto.volumenCm3 = elemento.volumenCm3;
+                        arrayPackages.push(objeto);
+                    }
+                });
+            }
+            console.log('LINE 96 - arrayPackages: '+JSON.stringify(arrayPackages));
+        }
+
+        return arrayPackages;
+    }
 
     function getSublistItemData(record)
     {
@@ -112,12 +124,11 @@ function(currentRecord, url, dialog, query, search, https) {
 
                 console.log('indice: '+i+' - itemreceiveItem: '+itemreceiveItem);
 
-                var idItem = nlapiGetLineItemValue(sublist,'item', i+1 )/*record.getCurrentSublistValue({
+                var idItem = nlapiGetLineItemValue(sublist,'item', i+1 )
+                /*record.getCurrentSublistValue({
                     sublistId: sublist,
                     fieldId: 'item'
                 });*/
-
-                console.log('indice: '+i+' - idItem: '+idItem+ ' - nlapiGetLineItemValue(item,item,1): ' +nlapiGetLineItemValue('item','item',1));
 
                 var quantityItem = record.getCurrentSublistValue({
                     sublistId: sublist,
@@ -131,7 +142,7 @@ function(currentRecord, url, dialog, query, search, https) {
                     fieldId: 'orderline'
                 });*/
 
-                console.log('indice: '+i+' - line: '+line);
+                console.log('LINE 142 - indice: '+i+' - idItem: '+idItem+ ' - nlapiGetLineItemValue(item,item,1): ' +nlapiGetLineItemValue('item','item',i+1)+ ' - quantityItem: '+quantityItem+' - itemreceiveItem:'+itemreceiveItem);
 
                 if (itemreceiveItem == 'T' || itemreceiveItem == true)
                 {
@@ -153,8 +164,6 @@ function(currentRecord, url, dialog, query, search, https) {
             dialog.alert(message);
         }
 
-        alert('itemArray: '+JSON.stringify(itemArray));
-
         return itemArray;
     }
 
@@ -170,11 +179,13 @@ function(currentRecord, url, dialog, query, search, https) {
             {
                 for (var i=0; i < array.length; i++)
                 {
-                    var idItem =  array[0].idItem;
+                    var idItem =  array[i].idItem;
                     itemArray.push(idItem);
                 }
             }
         }
+
+        console.log('LINE 185 - getItemData - itemArray: '+JSON.stringify(itemArray));
         
         if (itemArray.length > 0)
         {
@@ -209,7 +220,7 @@ function(currentRecord, url, dialog, query, search, https) {
             }
         }
     
-        console.log('arraySS: '+JSON.stringify(arraySS));
+        console.log('LINE 220 - getItemData - arraySS: '+JSON.stringify(arraySS));
 
         return arraySS;
     }
@@ -222,7 +233,7 @@ function(currentRecord, url, dialog, query, search, https) {
             sublistId: sublist
         });
 
-        console.log('LINE 220 - cantArticulos: '+cantArticulos);
+        console.log('LINE 233 - clearSublistPackage - cantArticulos: '+cantArticulos);
 
         for (var i=0; i < cantArticulos; i++)
         {
@@ -237,12 +248,42 @@ function(currentRecord, url, dialog, query, search, https) {
         });
 
 
-        console.log('LINE 235 - cantArticulos: '+cantArticulos);
+        console.log('LINE 248 - clearSublistPackage - cantArticulos: '+cantArticulos);
 
         return cantArticulos;
     }
 
 
+    function completarPackageSublist(record, arrayPackages)
+    {
+        for (i=0; i < arrayPackages.length; i ++)
+        {
+            record.selectNewLine({
+                sublistId: 'package'
+            });
+
+            record.setCurrentSublistValue({
+                sublistId: 'package',
+                fieldId: 'packageweight',
+                value: arrayPackages[i].pesoKg
+            });
+
+            record.setCurrentSublistValue({
+                sublistId: 'package',
+                fieldId: 'packagedescr',
+                value: arrayPackages[i].dimensiones
+            });
+
+            record.commitLine({
+                sublistId: 'package'
+            });
+
+            /*record.setValue({
+                fieldId: 'custbody_ptly_bultos_andreani',
+                value: JSON.stringify(arrayPackages)
+            });*/
+        }
+    }
 
     function isEmpty(value) {
 
@@ -277,7 +318,7 @@ function(currentRecord, url, dialog, query, search, https) {
       
     return {
         saveRecord: saveRecord,
-        completarPackageSublist: completarPackageSublist
+        gestionarPackageSublist: gestionarPackageSublist
     };
     
 });

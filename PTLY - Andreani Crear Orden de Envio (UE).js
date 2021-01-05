@@ -42,7 +42,7 @@ function(query, utilities, https, search, runtime, query) {
 
         log.debug(proceso, `43 - Remaining usage: ${script.getRemainingUsage()} - time ${new Date()}`);
 
-        if (scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT || scriptContext.type == scriptContext.UserEventType.PACK)// || scriptContext.type == scriptContext.UserEventType.COPY)
+        if (scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT)// || scriptContext.type == scriptContext.UserEventType.PACK)// || scriptContext.type == scriptContext.UserEventType.COPY)
         {
             let newRecord = scriptContext.newRecord;
             let oldRecord = scriptContext.oldRecord;
@@ -63,25 +63,29 @@ function(query, utilities, https, search, runtime, query) {
                 fieldId: 'shipmethod'
             });
 
+            let idContratoAndreani = newRecord.getValue({
+                fieldId: 'custbody_ptly_contrato_list_andreani'
+            });
+
             let esEnvioSuc = false;
 
-            let arrayConfig = getConfig(subsidiaria);
+            let arrayConfig = getConfigContrato(idContratoAndreani);
+
+            log.debug(proceso, `74 arrayConfig: ${JSON.stringify(arrayConfig)}`);
 
             if (!utilities.isEmpty(arrayConfig))
             {
                 if (arrayConfig.length > 0)
                 {
-                    let meEnvDom = arrayConfig[0].meenvdom;
-                    let meEnvUrgDom = arrayConfig[0].meenvurgdom;
-                    let meEnvSuc = arrayConfig[0].meenvsuc;
+                    let meEnvDom = arrayConfig[0].idmetodoenvio;
 
-                    log.debug(proceso, `77 - meEnvDom: ${meEnvDom} - meEnvUrgDom ${meEnvUrgDom} - meEnvSuc: ${meEnvSuc} - subsidiaria: ${subsidiaria} - sucId: ${sucId} - contrato: ${contrato} - shipmethod: ${shipmethod} - arrayConfig: ${JSON.stringify(arrayConfig)}`);
+                    log.debug(proceso, `77 - meEnvDom: ${meEnvDom} - idContratoAndreani ${idContratoAndreani} - subsidiaria: ${subsidiaria} - sucId: ${sucId} - contrato: ${contrato} - shipmethod: ${shipmethod} - arrayConfig: ${JSON.stringify(arrayConfig)}`);
 
-                    if (meEnvDom == shipmethod || meEnvUrgDom == shipmethod || meEnvSuc == shipmethod)
+                    if (meEnvDom == shipmethod)
                     {
                         // SI EL METODO DE ENVIO ES ENVIO A SUCURSAL ANDREANI Y LA TRANSACCION TIENE ID SUCURSAL ANDREANI CONFIGURADO
-                        if (meEnvSuc == shipmethod)
-                            esEnvioSuc = true;
+                        /*if (meEnvSuc == shipmethod)
+                            esEnvioSuc = true;*/
 
                         if ((!utilities.isEmpty(sucId) && esEnvioSuc) || !esEnvioSuc)
                         {
@@ -107,40 +111,25 @@ function(query, utilities, https, search, runtime, query) {
                                 if (((!utilities.isEmpty(shipstatusOR) && !utilities.isEmpty(shipstatusNR)) && (shipstatusOR == 'A' && shipstatusNR == 'B')) || ((utilities.isEmpty(shipstatusOR) && !utilities.isEmpty(shipstatusNR) && shipstatusNR == 'B')))
                                 {
                                     let expReg = /[^0-9.]+/g;
-                                    let location;
                                     let cantItems;
                                     let cantPackage;
+                                    let location = getLocationItem(newRecord);
 
                                     log.debug({
                                         title: proceso,
                                         details: `newRecord: ${JSON.stringify(newRecord)}`
                                     });
 
-                                    //CANTIDAD DE ARTICULOS
-                                    cantItems = newRecord.getLineCount({
-                                        sublistId: sublist
-                                    });
-
-                                    //SE DETERMINA EL LOCATION PARA INDICAR LOS DATOS DEL ORIGEN AL CREAR LA OE EN ANDREANI
-                                    if (cantItems > 0)
-                                    {
-                                        location = newRecord.getSublistValue({
-                                            sublistId: sublist,
-                                            fieldId: 'location',
-                                            line: 0
-                                        });
-                                    }
-
                                     if (!utilities.isEmpty(location))
                                     {
                                         //DATOS DEL ORIGEN
-                                        log.debug(proceso, `98 - INICIO - time ${new Date()}`);
+                                        log.debug(proceso, `126 - INICIO - time ${new Date()}`);
                                         let arrLocation = getOrigenLocationData(location);
-                                        log.debug(proceso, `100 - FIN - time ${new Date()}  -  arrLocation: ${JSON.stringify(arrLocation)}`);
+                                        log.debug(proceso, `128 - FIN - time ${new Date()}  -  location: ${location} - arrLocation: ${JSON.stringify(arrLocation)}`);
 
                                         log.debug({
                                             title: proceso,
-                                            details: `LINE 104 location: ${location} -  arrLocation: ${JSON.stringify(arrLocation)}`
+                                            details: `LINE 132 location: ${location} -  arrLocation: ${JSON.stringify(arrLocation)}`
                                         });
 
                                         if ((!utilities.isEmpty(arrLocation.length) && arrLocation.length > 0))
@@ -154,27 +143,24 @@ function(query, utilities, https, search, runtime, query) {
                                             if (cantPackage > 0)
                                             {
                                                 //DATOS DE LOS BULTOS
-                                                log.debug(proceso, `118 - INICIO - time ${new Date()}`);
+                                                log.debug(proceso, `146 - INICIO - time ${new Date()}`);
                                                 let arrayPackage = getPackagesData(cantPackage, newRecord);
-                                                log.debug(proceso, `120 - FIN - time ${new Date()}`);
+                                                log.debug(proceso, `148 - FIN - time ${new Date()}`);
 
                                                 log.debug({
                                                     title: proceso,
-                                                    details: `LINE 124 arrayPackage: ${JSON.stringify(arrayPackage)}`
+                                                    details: `LINE 152 arrayPackage: ${JSON.stringify(arrayPackage)}`
                                                 });
 
                                                 if (!utilities.isEmpty(arrayPackage) && arrayPackage.length> 0)
                                                 {
+                                                    let idRecord = newRecord.id;
 
-                                                    let createdFromId =  newRecord.getValue({
-                                                        fieldId: 'createdfrom'
-                                                    });
-
-                                                    if (!utilities.isEmpty(createdFromId))
+                                                    if (!utilities.isEmpty(idRecord))
                                                     {
                                                         //DATOS DEL DESTINO Y DESTINATARIO
                                                         log.debug(proceso, `137 - INICIO - time ${new Date()}`);
-                                                        let arrayDestino = getDestinoData(createdFromId);
+                                                        let arrayDestino = getDestinoData(idRecord);
                                                         log.debug(proceso, `139 - FIN - time ${new Date()}`);
 
                                                         log.debug({
@@ -234,10 +220,10 @@ function(query, utilities, https, search, runtime, query) {
                                                         {
                                                             let bultosObjet = {};
                                                             bultosObjet.kilos = arrayPackage[i].kilos;
-                                                            bultosObjet.volumenCm = arrayPackage[i].kilos;
-                                                            bultosObjet.largoCm = 25;//arrayPackage[i].kilos;
-                                                            bultosObjet.altoCm = 23;//arrayPackage[i].kilos;
-                                                            bultosObjet.anchoCm = 30//arrayPackage[i].kilos;
+                                                            bultosObjet.volumenCm = arrayPackage[i].volumen;
+                                                            bultosObjet.largoCm = arrayPackage[i].largo;
+                                                            bultosObjet.altoCm = arrayPackage[i].alto;
+                                                            bultosObjet.anchoCm = arrayPackage[i].ancho;
                                                             bodyRequest.bultos.push(bultosObjet);
                                                         }
                             
@@ -272,7 +258,7 @@ function(query, utilities, https, search, runtime, query) {
                                                                     value: JSON.stringify(respCrearOE)
                                                                 });
     
-                                                                if (respCrearOE.code == 200 || respCrearOE.code == 202)
+                                                                if (respCrearOE.code == 202)
                                                                 {
                                                                     let body = JSON.parse(respCrearOE.body);
                                                                     let arrayBultos = [];
@@ -454,6 +440,28 @@ function(query, utilities, https, search, runtime, query) {
         return false;
     }
 
+    function getLocationItem(record)
+    {
+        let location = null;
+
+        //CANTIDAD DE ARTICULOS
+        cantItems = record.getLineCount({
+            sublistId: sublist
+        });
+
+        //SE DETERMINA EL LOCATION PARA INDICAR LOS DATOS DEL ORIGEN AL CREAR LA OE EN ANDREANI
+        if (cantItems > 0)
+        {
+            location = record.getSublistValue({
+                sublistId: sublist,
+                fieldId: 'location',
+                line: 0
+            });
+        }
+
+        return location;
+    }
+
     let getOrigenLocationData = (location) => 
     {
         let arrResults = [];
@@ -484,7 +492,7 @@ function(query, utilities, https, search, runtime, query) {
         {
             let objPackage = {};
 
-            objPackage.numeroDeBulto = i;
+            objPackage.numeroDeBulto = i + 1;
 
             objPackage.kilos = record.getSublistValue({
                 sublistId: sublistPkg,
@@ -492,11 +500,21 @@ function(query, utilities, https, search, runtime, query) {
                 line: i
             });
 
-            objPackage.volumen = record.getSublistValue({
+            objPackage.dimensiones = record.getSublistValue({
                 sublistId: sublistPkg,
                 fieldId: 'packagedescr',
                 line: i
             });
+
+            let arrayDimensiones = objPackage.dimensiones.split('x');
+
+            if (arrayDimensiones.length == 3)
+            {
+                objPackage.largo = parseFloat(arrayDimensiones[0],10);
+                objPackage.ancho = parseFloat(arrayDimensiones[1],10);
+                objPackage.alto = parseFloat(arrayDimensiones[2],10);
+                objPackage.volumen = parseFloat((objPackage.largo * objPackage.ancho * objPackage.alto),10);
+            }
 
             arrayPackage.push(objPackage);
         }
@@ -509,7 +527,7 @@ function(query, utilities, https, search, runtime, query) {
         let arrayDestino = [];
 
         let ssDirOrigen = search.load({
-            id: 'customsearch_ptly_so_andreani',
+            id: 'customsearch_ptly_fullfilment_andreani',
             type: search.Type.TRANSACTION
         })
 
@@ -571,6 +589,11 @@ function(query, utilities, https, search, runtime, query) {
             record.setValue({
                 fieldId: 'custbody_l54_valor_declarado',
                 value: 100.00
+            });
+
+            record.setValue({
+                fieldId: 'custbody_ptly_oe_generada_andreani',
+                value: true
             });
 
             return true;
@@ -667,6 +690,27 @@ function(query, utilities, https, search, runtime, query) {
         "custrecord_ptly_cot_andreani_me_env_dom AS meEnvDom, custrecord_ptly_cot_andreani_me_env_urg AS meEnvUrgDom, " +
         "custrecord_ptly_cot_andreani_me_env_suc AS meEnvSuc FROM customrecord_ptly_cot_andreani " +
         "WHERE custrecord_ptly_cot_andreani_sub = "+ subsidiaria +"\n";
+
+        let objPagedData = query.runSuiteQLPaged({
+            query: strSQL,
+            pageSize: 1
+        });
+        
+        objPagedData.pageRanges.forEach(function(pageRange) {
+            //fetch
+            let objPage = objPagedData.fetch({ index: pageRange.index }).data;
+            // Map results to columns 
+            arrResults.push.apply(arrResults, objPage.asMappedResults());
+        });
+
+        return arrResults;
+    }
+
+    let getConfigContrato = (idContrato) =>
+    {
+        let arrResults = [];
+
+        let strSQL = "SELECT \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.\"ID\" AS idinterno, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.name AS nombre, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_me AS idmetodoenvio, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_nro AS nrocontrato \nFROM \n CUSTOMRECORD_PTLY_CONTR_ANDREANI\nWHERE \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.\"ID\" = '" + idContrato +"'\n";
 
         let objPagedData = query.runSuiteQLPaged({
             query: strSQL,

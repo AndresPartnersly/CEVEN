@@ -34,7 +34,7 @@ function(serverWidget, query, runtime, utilities) {
             form.addButton({
                 id: 'custpage_call_stl',
                 label: 'Completar Paquetes Andreani',
-                functionName: 'completarPackageSublist()'
+                functionName: 'gestionarPackageSublist()'
             });
         }
         log.audit(proceso, 'FIN');
