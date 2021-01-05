@@ -285,6 +285,105 @@ function(currentRecord, url, dialog, query, search, https) {
         }
     }
 
+    function limpiarPackageSublist ()
+    {
+        var title = 'Mensaje';
+
+        var record = currentRecord.get();
+
+        var shipstatus = record.getValue({
+            fieldId: 'shipstatus'
+        });
+
+        if (!isEmpty(shipstatus) && shipstatus == 'B')
+        {
+            var cantidadPckg = clearSublistPackage(record);
+
+            if (cantidadPckg == 0)
+            {
+                var message = {
+                    title: title,
+                    message: "La sublista de Paquetes / Packages fue limpiada exitosamente"
+                };
+                
+                dialog.alert(message);
+            }
+        }
+        else
+        {
+            var message = {
+                title: title,
+                message: "Para usar esta función el estado de la transacción debe ser Embalado / Packing"
+            };
+            
+            dialog.alert(message);
+        }
+    }
+
+    function imprimirEtiqueta()
+    {
+        var title = 'Mensaje';
+
+        var record = currentRecord.get();
+
+        var oe_generada_Andreani = record.getValue({
+            fieldId: 'custbody_ptly_oe_generada_andreani'
+        });
+
+        console.log('record: '+JSON.stringify(record));
+        console.log('oe_generada_Andreani: '+oe_generada_Andreani);
+
+        var sublist = 'package';
+        var cantArticulos = record.getLineCount({
+            sublistId: sublist
+        });
+
+        console.log('cantArticulos: '+cantArticulos);
+
+        
+
+    }
+
+    function generarToken()
+    {
+		var XAuthorizationToken = "";
+        var proceso = "generarToken";
+		var headers = {'Authorization': 'Basic Y2V2ZW5fd3M6U0NKS0w0MjEyMGR3'};
+		var response = https.get({
+			url: 'https://api.andreani.com/login',
+			headers: headers
+		});
+
+		console.log('LINE 853: response',JSON.stringify(response));
+
+		if (!isEmpty(response))
+		{
+			if (response.code == 200)
+			{
+				XAuthorizationToken = response.headers["X-Authorization-token"];
+				
+			}
+			else
+			{
+				log.error({
+					title: proceso,
+					details: "generarToken - Error al generar token, codigo de error: "+response.code+" - response: "+JSON.stringify(response)+""
+				});
+			}
+		}
+		else
+		{
+			log.error({
+				title: proceso,
+				details: "generarToken - Response vacio"
+			});
+
+			return XAuthorizationToken;
+		}
+
+		return XAuthorizationToken;
+    }
+
     function isEmpty(value) {
 
         if (value === '')
@@ -318,7 +417,9 @@ function(currentRecord, url, dialog, query, search, https) {
       
     return {
         saveRecord: saveRecord,
-        gestionarPackageSublist: gestionarPackageSublist
+        gestionarPackageSublist: gestionarPackageSublist,
+        imprimirEtiqueta: imprimirEtiqueta,
+        limpiarPackageSublist: limpiarPackageSublist
     };
     
 });

@@ -147,9 +147,78 @@
 		}
 	}
 
+
+	let generarEtiqueta = (url, token) => {
+
+		const proceso = `generarEtiqueta`;
+
+		if (!isEmpty(url))
+		{
+			if (!isEmpty(token))
+			{
+				log.debug({
+					title: proceso,
+					details: `url: ${url} - token: ${token}`
+				});
+
+				let responseObj = {};
+				let headers = {'x-authorization-token': `Basic ${token}`};
+				let response = https.get({
+					url: url,
+					headers: headers
+				});
+                                                                                                                                           
+				log.audit(proceso, `LINE 293 - headers: +${JSON.stringify(headers)}`);
+
+				if (!isEmpty(response))
+				{
+					if (response.code == 200)
+					{
+						responseObj = response;
+					}
+					else
+					{
+						log.error({
+							title: proceso,
+							details: `generarEtiqueta - Error al invocar servicio, codigo de error: ${response.code}`
+						});
+
+						responseObj = response;
+					}
+				}
+				else
+				{
+					log.error({
+						title: proceso,
+						details: `generarEtiqueta - Response vacio`
+					});
+
+					return responseObj;
+				}
+
+				return responseObj;
+			}
+			else
+			{
+				log.error({
+					title: proceso,
+					details: `generarEtiqueta - No se recibio el parametro: Token`
+				});
+			}
+		}
+		else
+		{
+			log.error({
+				title: proceso,
+				details: `generarEtiqueta - No se recibio el parametro: URL`
+			});
+		}
+	}
+
      return {
          isEmpty: isEmpty,
 		 generarToken: generarToken,
-		 cotizarEnvio: cotizarEnvio
+		 cotizarEnvio: cotizarEnvio,
+		 generarEtiqueta: generarEtiqueta
      };
  });

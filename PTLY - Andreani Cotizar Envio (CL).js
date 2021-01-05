@@ -885,7 +885,7 @@ function(currentRecord, url, dialog, query, search, https) {
         var proceso = "generarToken";
 		var headers = {'Authorization': 'Basic Y2V2ZW5fd3M6U0NKS0w0MjEyMGR3'};
 		var response = https.get({
-			url: 'https://api.qa.andreani.com/login',
+			url: 'https://api.andreani.com/login',
 			headers: headers
 		});
 

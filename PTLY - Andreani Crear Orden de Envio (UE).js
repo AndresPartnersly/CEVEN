@@ -288,6 +288,12 @@ function(query, utilities, https, search, runtime, query) {
                                                                                 title: proceso,
                                                                                 details: `Orden de Envio Andreani generada correctamente`
                                                                             });
+
+                                                                            let url = 'https://api.andreani.com/v2/ordenes-de-envio/360000036144540/etiquetas';
+
+                                                                            let etiquetaResp = utilities.generarEtiqueta(url, token);
+                                                                                                                                           
+                                                                            log.audit(proceso, `LINE 296 - etiquetaResp: +${JSON.stringify(etiquetaResp)}`);
                                                                         }
                                                                     }
                                                                 }

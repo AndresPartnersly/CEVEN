@@ -25,7 +25,7 @@ function(serverWidget, query, runtime, utilities) {
 
         const newRecord = scriptContext.newRecord;
 
-        if (scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT)
+        /*if (scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT)
         {
             let form = scriptContext.form;
 
@@ -36,7 +36,43 @@ function(serverWidget, query, runtime, utilities) {
                 label: 'Completar Paquetes Andreani',
                 functionName: 'gestionarPackageSublist()'
             });
+        }*/
+
+        if (scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT)
+        {
+            let form = scriptContext.form;
+
+            form.clientScriptModulePath = './PTLY - Andreani Gestionar Paquete (CL).js';
+
+            form.addButton({
+                id: 'custpage_call_stl',
+                label: 'Limpiar Sublista Paquetes / Packages',
+                functionName: 'limpiarPackageSublist()'
+            });
         }
+
+        if (scriptContext.type == scriptContext.UserEventType.VIEW)
+        {
+            let andreaniOEGenerada = newRecord.getValue({
+                fieldId: 'custbody_ptly_oe_generada_andreani'
+            });
+
+            log.debug('LINE 60','andreaniOEGenerada: '+andreaniOEGenerada);
+
+            if (andreaniOEGenerada)
+            {
+                let form = scriptContext.form;
+
+                form.clientScriptModulePath = './PTLY - Andreani Gestionar Paquete (CL).js';
+
+                form.addButton({
+                    id: 'custpage_call_stl',
+                    label: 'Completar Paquetes Andreani',
+                    functionName: 'imprimirEtiqueta()'
+                });
+            }
+        }
+
         log.audit(proceso, 'FIN');
     }
 
