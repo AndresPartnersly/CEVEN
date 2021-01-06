@@ -14,28 +14,25 @@ function(https, file, record, utilities) {
 
 		if (context.request.method == 'GET') {
 
-			let idFullfilment = 3025629;
+			if (!utilities.isEmpty(context.request.parameters.idPackage)) {
 
-			//if (!utilities.isEmpty(context.request.parameters.idRec)) {
-			if (!utilities.isEmpty(idFullfilment)) {
-
-			//	let idFullfilment = 3025629; //context.request.parameters.idRec;
+				let idPackage = context.request.parameters.idPackage;
 				
-				log.audit(proceso, `LINE 24 - idFullfilment: ${idFullfilment}`);
+				log.audit(proceso, `LINE 21 - idPackage: ${idPackage}`);
 
-				let recordItemfullfilment = record.load({
+				/*let recordItemfullfilment = record.load({
 					type: record.Type.ITEM_FULFILLMENT,
 					id: idFullfilment,
 					isDynamic: true
 				});
 
-				log.audit(proceso, `LINE 32 - recordItemfullfilment: ${JSON.stringify(recordItemfullfilment)}`);
+				log.audit(proceso, `LINE 32 - recordItemfullfilment: ${JSON.stringify(recordItemfullfilment)}`);*/
 
-				if (!utilities.isEmpty(recordItemfullfilment))
-				{
-					let arrayPackage = getPackagesData(recordItemfullfilment);
+				/*if (!utilities.isEmpty(recordItemfullfilment))
+				{*/
+					//let arrayPackage = getPackagesData(recordItemfullfilment);
 
-					log.debug(proceso, `LINE 38 - arrayPackage ${JSON.stringify(arrayPackage)}`);
+					//log.debug(proceso, `LINE 38 - arrayPackage ${JSON.stringify(arrayPackage)}`);
 
 					let token = utilities.generarToken('https://api.andreani.com/login');
 
@@ -44,17 +41,17 @@ function(https, file, record, utilities) {
 						details: `LINE 41 token: ${token}`
 					});
 
-					if (!utilities.isEmpty(arrayPackage) && arrayPackage.length> 0)
-					{
+					/*if (!utilities.isEmpty(arrayPackage) && arrayPackage.length> 0)
+					{*/
 						if (!utilities.isEmpty(token))
 						{
 							var headers = {"x-authorization-token": ""+token+""};
 							log.audit(proceso, `LINE 52 -headers: +${JSON.stringify(headers)}`);
 							let contenidoPDF = '';
 
-							for (i = 0; i < arrayPackage.length; i++)
-							{
-								let nroEnvio = arrayPackage[i];
+							/*for (i = 0; i < arrayPackage.length; i++)
+							{*/
+								let nroEnvio = idPackage;//arrayPackage[i];
 								let url = `https://api.andreani.com/v2/ordenes-de-envio/${nroEnvio}/etiquetas`;
 
 								let response = https.get({
@@ -62,30 +59,32 @@ function(https, file, record, utilities) {
 									headers: headers
 								});
 								
-								log.audit(proceso, 'LINE 64 - response: '+JSON.stringify(response));
+								log.audit(proceso, 'LINE 62 - response: '+JSON.stringify(response));
 
 								contenidoPDF = response.body;
 
-								log.debug(proceso, 'LINE 68 - response: ' + JSON.stringify(response));
-								log.debug(proceso, 'contenidoPDF: ' + contenidoPDF);
-							}
+								let archivo = file.create({
+									name: `${nroEnvio}.pdf`,
+									description: 'Etiqueta Bulto Andreani',
+									fileType: file.Type.PDF,
+									contents: contenidoPDF
+								});
+	
+								context.response.writeFile({
+									file: archivo
+								});
 
-							let archivo = file.create({
-								name: `ItemFullfilment.pdf`,
-								description: 'Etiqueta Bulto Andreani',
-								fileType: file.Type.PDF,
-								contents: contenidoPDF
-							});
-
-							context.response.writeFile({
-								file: archivo
-							});
+								//log.debug(proceso, 'LINE 77 - indice: '+i+' - response: ' + JSON.stringify(response));
+								log.debug(proceso, 'LINE 78 - response: ' + JSON.stringify(response));
+								log.debug(proceso, 'LINE 79 - nroEnvio: '+nroEnvio+' - archivo: '+ JSON.stringify(archivo));
+								log.debug(proceso, 'LINE 80 - contenidoPDF: ' + contenidoPDF);
+							//}
 
 							//var responseSuitelet = context.response;
 							//responseSuitelet.write({ output: JSON.stringify(response) });
 						}
-					}
-				}
+					//}
+				//}
 
 			}else {
 				var objRespuesta = {};

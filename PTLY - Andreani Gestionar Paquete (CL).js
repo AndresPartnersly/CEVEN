@@ -3,9 +3,9 @@
  * @NAmdConfig /SuiteScripts/configuration.json
  * @NScriptType ClientScript
  */
-define(['N/currentRecord', 'N/url', 'N/ui/dialog', 'N/query', 'N/search', 'N/https'],
+define(['N/currentRecord', 'N/url', 'N/ui/dialog', 'N/search', 'N/https'],
 
-function(currentRecord, url, dialog, query, search, https) {
+function(currentRecord, url, dialog, search, https) {
     
  
     function saveRecord(scriptContext) {
@@ -325,8 +325,9 @@ function(currentRecord, url, dialog, query, search, https) {
         var title = 'Mensaje';
 
         var record = currentRecord.get();
+        var recId = currentRecord.id;
 
-        var oe_generada_Andreani = record.getValue({
+        /*var oe_generada_Andreani = record.getValue({
             fieldId: 'custbody_ptly_oe_generada_andreani'
         });
 
@@ -336,9 +337,28 @@ function(currentRecord, url, dialog, query, search, https) {
         var sublist = 'package';
         var cantArticulos = record.getLineCount({
             sublistId: sublist
-        });
+        });*/
 
-        console.log('cantArticulos: '+cantArticulos);
+        var arrayPackage  = ['360000078310870','360000078310880'];
+
+        for (i = 0; i < arrayPackage.length; i++)
+        {
+            idPackage = arrayPackage[i];
+
+            console.log('348-recId: '+recId+' - indice: '+i);
+
+            var new_url = url.resolveScript({
+                scriptId: 'customscript_ptly_gen_etiqueta_andreani',
+                deploymentId: 'customdeploy_ptly_gen_etiqueta_andreani',
+                params: {idPackage: idPackage}
+            });
+    
+            console.log('new_url: '+new_url+' - indice: '+i);
+    
+            window.open(new_url);
+        }
+
+        //console.log('cantArticulos: '+cantArticulos);
 
         
 
