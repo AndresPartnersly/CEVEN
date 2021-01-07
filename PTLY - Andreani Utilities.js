@@ -162,7 +162,7 @@
 				});
 
 				let responseObj = {};
-				let headers = {'x-authorization-token': `Basic ${token}`};
+				let headers = {'x-authorization-token': `${token}`};
 				let response = https.get({
 					url: url,
 					headers: headers

@@ -53,26 +53,32 @@ function(serverWidget, query, runtime, utilities) {
 
         if (scriptContext.type == scriptContext.UserEventType.VIEW)
         {
-            let andreaniOEGenerada = newRecord.getValue({
-                fieldId: 'custbody_ptly_oe_generada_andreani'
+            let estadoProcOE = newRecord.getValue({
+                fieldId: 'custbody_ptly_est_pr_oe_andreani'
             });
 
-            log.debug('LINE 60','andreaniOEGenerada: '+andreaniOEGenerada);
+            log.debug('LINE 60','estadoProcOE: '+estadoProcOE);
 
-            if (andreaniOEGenerada)
+            let scriptParams = getParams();
+
+            log.debug('LINE 64','scriptParams: '+JSON.stringify(scriptParams));
+
+            if (!utilities.isEmpty(scriptParams))
             {
-                let form = scriptContext.form;
+                if (scriptParams.estadoProcOK == estadoProcOE)
+                {
+                    let form = scriptContext.form;
 
-                form.clientScriptModulePath = './PTLY - Andreani Gestionar Paquete (CL).js';
+                    form.clientScriptModulePath = './PTLY - Andreani Gestionar Paquete (CL).js';
 
-                form.addButton({
-                    id: 'custpage_call_stl',
-                    label: 'Completar Paquetes Andreani',
-                    functionName: 'imprimirEtiqueta()'
-                });
+                    form.addButton({
+                        id: 'custpage_call_stl',
+                        label: 'Imprimir Etiquetas Andreani',
+                        functionName: 'imprimirEtiqueta()'
+                    });
+                }
             }
         }
-
         log.audit(proceso, 'FIN');
     }
 
@@ -100,6 +106,22 @@ function(serverWidget, query, runtime, utilities) {
      */
     function afterSubmit(scriptContext) {
 
+    }
+
+    let getParams = () => {
+        
+        let response = { error: false, mensaje:'', contextocrear:'', contextomodificar:'' };
+        
+        try {
+            var currScript = runtime.getCurrentScript();
+            response.estadoProcOK = currScript.getParameter('custscript_ptly_gest_packg_andreani_ok');
+            response.estadoProcError = currScript.getParameter('custscript_ptly_gest_packg_andreani_err');
+        } catch (e) {
+            response.error = true;
+            response.mensaje = "Netsuite Error - Excepción: " + e.message;
+        }
+
+        return response;
     }
 
     return {

@@ -3,9 +3,9 @@
  * @NAmdConfig /SuiteScripts/configuration.json
  * @NScriptType ClientScript
  */
-define(['N/currentRecord', 'N/url', 'N/ui/dialog', 'N/search', 'N/https'],
+define(['N/currentRecord', 'N/url', 'N/ui/dialog', 'N/search', 'N/record', 'N/runtime'],
 
-function(currentRecord, url, dialog, search, https) {
+function(currentRecord, url, dialog, search, record, runtime) {
     
  
     function saveRecord(scriptContext) {
@@ -18,40 +18,48 @@ function(currentRecord, url, dialog, search, https) {
 
         var title = 'Mensaje';
 
-        var record = currentRecord.get();
+        var recordItemfullfilment = currentRecord.get();
 
-        var shipstatus = record.getValue({
+        var shipstatus = recordItemfullfilment.getValue({
             fieldId: 'shipstatus'
         });
 
-        if (!isEmpty(shipstatus) && shipstatus == 'B')
+        if (!utilities.isEmpty(shipstatus) && shipstatus == 'B')
         {
             var message = {
                 title: title,
-                message: "El proceso puede demorar unos segundos mientras se calcula la información"
+                message: "El proceso puede demorar unos segundos mientras se recopila la información"
             };
 
-            console.log('LINE 34 - record: '+JSON.stringify(record));
-            var itemSublist = getSublistItemData(record);
-            console.log('LINE 36 - itemSublist: '+JSON.stringify(itemSublist));
+            dialog.alert(message); 
+
+            console.log('LINE 36 - record: '+JSON.stringify(recordItemfullfilment));
+
+            var itemSublist = getSublistItemData(recordItemfullfilment);
+            
+            console.log('LINE 40 - itemSublist: '+JSON.stringify(itemSublist));
     
             if (!isEmpty(itemSublist) && itemSublist.length > 0)
             {
-                console.log('LINE 40');
+                console.log('LINE 44');
+
                 var itemArray = getItemData(itemSublist);
-                console.log('LINE 42 - itemArray: '+JSON.stringify(itemArray));
+
+                console.log('LINE 48 - itemArray: '+JSON.stringify(itemArray));
 
                 if (!isEmpty(itemArray) && itemArray.length > 0)
                 {   
                     var arrayPackages = createArrayPackage(itemArray, itemSublist);
-                    console.log('LINE 47 - arrayPackages: '+JSON.stringify(arrayPackages));
 
-                    var cantidadPckg = clearSublistPackage(record);
-                    console.log('LINE 50 - cantidadPckg: '+cantidadPckg);
+                    console.log('LINE 53 - arrayPackages: '+JSON.stringify(arrayPackages));
+
+                    var cantidadPckg = clearSublistPackage(recordItemfullfilment);
+
+                    console.log('LINE 56 - cantidadPckg: '+cantidadPckg);
 
                     if (!isEmpty(arrayPackages) && arrayPackages.length > 0)
                     {
-                        completarPackageSublist(record, arrayPackages);
+                        completarPackageSublist(recordItemfullfilment, arrayPackages);
                     }
                 }
             }
@@ -93,7 +101,7 @@ function(currentRecord, url, dialog, search, https) {
                     }
                 });
             }
-            console.log('LINE 96 - arrayPackages: '+JSON.stringify(arrayPackages));
+            console.log('LINE 104 - arrayPackages: '+JSON.stringify(arrayPackages));
         }
 
         return arrayPackages;
@@ -142,7 +150,7 @@ function(currentRecord, url, dialog, search, https) {
                     fieldId: 'orderline'
                 });*/
 
-                console.log('LINE 142 - indice: '+i+' - idItem: '+idItem+ ' - nlapiGetLineItemValue(item,item,1): ' +nlapiGetLineItemValue('item','item',i+1)+ ' - quantityItem: '+quantityItem+' - itemreceiveItem:'+itemreceiveItem);
+                console.log('LINE 153 - indice: '+i+' - idItem: '+idItem+ ' - nlapiGetLineItemValue(item,item,1): ' +nlapiGetLineItemValue('item','item',i+1)+ ' - quantityItem: '+quantityItem+' - itemreceiveItem:'+itemreceiveItem);
 
                 if (itemreceiveItem == 'T' || itemreceiveItem == true)
                 {
@@ -163,7 +171,6 @@ function(currentRecord, url, dialog, search, https) {
             
             dialog.alert(message);
         }
-
         return itemArray;
     }
 
@@ -185,7 +192,7 @@ function(currentRecord, url, dialog, search, https) {
             }
         }
 
-        console.log('LINE 185 - getItemData - itemArray: '+JSON.stringify(itemArray));
+        console.log('LINE 195 - getItemData - itemArray: '+JSON.stringify(itemArray));
         
         if (itemArray.length > 0)
         {
@@ -218,9 +225,8 @@ function(currentRecord, url, dialog, search, https) {
                 objeto.volumenCm3 = ssFullfilmentRange[j].getValue(ssFullfilmentRun.columns[7]);
                 arraySS.push(objeto);
             }
-        }
-    
-        console.log('LINE 220 - getItemData - arraySS: '+JSON.stringify(arraySS));
+        }    
+        console.log('LINE 230 - getItemData - arraySS: '+JSON.stringify(arraySS));
 
         return arraySS;
     }
@@ -233,7 +239,7 @@ function(currentRecord, url, dialog, search, https) {
             sublistId: sublist
         });
 
-        console.log('LINE 233 - clearSublistPackage - cantArticulos: '+cantArticulos);
+        console.log('LINE 242 - clearSublistPackage - cantArticulos: '+cantArticulos);
 
         for (var i=0; i < cantArticulos; i++)
         {
@@ -247,8 +253,7 @@ function(currentRecord, url, dialog, search, https) {
             sublistId: sublist
         });
 
-
-        console.log('LINE 248 - clearSublistPackage - cantArticulos: '+cantArticulos);
+        console.log('LINE 256 - clearSublistPackage - cantArticulos: '+cantArticulos);
 
         return cantArticulos;
     }
@@ -277,18 +282,13 @@ function(currentRecord, url, dialog, search, https) {
             record.commitLine({
                 sublistId: 'package'
             });
-
-            /*record.setValue({
-                fieldId: 'custbody_ptly_bultos_andreani',
-                value: JSON.stringify(arrayPackages)
-            });*/
         }
     }
+
 
     function limpiarPackageSublist ()
     {
         var title = 'Mensaje';
-
         var record = currentRecord.get();
 
         var shipstatus = record.getValue({
@@ -320,88 +320,94 @@ function(currentRecord, url, dialog, search, https) {
         }
     }
 
+    
     function imprimirEtiqueta()
     {
         var title = 'Mensaje';
+        var proceso = 'imprimirEtiqueta';
 
-        var record = currentRecord.get();
-        var recId = currentRecord.id;
+        /*var message = {
+            title: title,
+            message: "El proceso puede demorar unos segundos ya que consulta un servicio externo de Andreani"
+        };
 
-        /*var oe_generada_Andreani = record.getValue({
-            fieldId: 'custbody_ptly_oe_generada_andreani'
+        dialog.alert(message); */
+
+        var recordObj = currentRecord.get();
+        var recId = recordObj.id;
+
+        var recordItemfullfilment = record.load({
+            type: record.Type.ITEM_FULFILLMENT,
+            id: recId,
+            isDynamic: true
         });
 
-        console.log('record: '+JSON.stringify(record));
-        console.log('oe_generada_Andreani: '+oe_generada_Andreani);
+        console.log(proceso, 'LINE 344 - recordItemfullfilment: '+ JSON.stringify(recordItemfullfilment));
 
-        var sublist = 'package';
-        var cantArticulos = record.getLineCount({
-            sublistId: sublist
-        });*/
-
-        var arrayPackage  = ['360000078310870','360000078310880'];
-
-        for (i = 0; i < arrayPackage.length; i++)
+        if (!isEmpty(recordItemfullfilment))
         {
-            idPackage = arrayPackage[i];
-
-            console.log('348-recId: '+recId+' - indice: '+i);
-
-            var new_url = url.resolveScript({
-                scriptId: 'customscript_ptly_gen_etiqueta_andreani',
-                deploymentId: 'customdeploy_ptly_gen_etiqueta_andreani',
-                params: {idPackage: idPackage}
+            var accountId = runtime.accountId;
+            var environment = runtime.envType;
+            var arrayPackage = getPackagesData(recordItemfullfilment);
+            var tranid = recordItemfullfilment.getValue({
+                fieldId: 'tranid'
             });
-    
-            console.log('new_url: '+new_url+' - indice: '+i);
-    
-            window.open(new_url);
+            var subsidiaria = recordItemfullfilment.getValue({
+                fieldId: 'subsidiary'
+            });
+
+            console.log(proceso, 'LINE 350 - arrayPackage: '+JSON.stringify(arrayPackage));
+
+            if (!isEmpty(arrayPackage))
+            {
+                for (i = 0; i < arrayPackage.length; i++)
+                {
+                    idPackage = arrayPackage[i];
+
+                    console.log('LINE 358 - recId: '+recId+' - indice: '+ i +' - idPackage: ' + idPackage+' - tranid: ' + tranid+' - subsidiaria: ' + subsidiaria+' - accountId: ' + idPackage+' - environment: ' + environment);
+
+                    var new_url = url.resolveScript({
+                        scriptId: 'customscript_ptly_gen_etiqueta_andreani',
+                        deploymentId: 'customdeploy_ptly_gen_etiqueta_andreani',
+                        params: {
+                            idPackage: idPackage,
+                            tranid: tranid,
+                            subsidiaria: subsidiaria,
+                            accountId: accountId,
+                            environment: environment
+                        }
+                    });
+            
+                    console.log('LINE 366 - new_url: '+new_url+' - recId: '+recId+' - indice: '+ i +' - idPackage: ' + idPackage);
+            
+                    window.open(new_url);
+                }
+            }
         }
-
-        //console.log('cantArticulos: '+cantArticulos);
-
-        
-
     }
 
-    function generarToken()
+
+    function getPackagesData (record)
     {
-		var XAuthorizationToken = "";
-        var proceso = "generarToken";
-		var headers = {'Authorization': 'Basic Y2V2ZW5fd3M6U0NKS0w0MjEyMGR3'};
-		var response = https.get({
-			url: 'https://api.andreani.com/login',
-			headers: headers
+        var sublistPkg = 'package';
+		var arrayPackage = [];
+		
+		var cantPackage = record.getLineCount({
+			sublistId: sublistPkg
 		});
 
-		console.log('LINE 853: response',JSON.stringify(response));
+        for (i = 0; i < cantPackage; i++)
+        {
+            var packagetrackingnumber = record.getSublistValue({
+                sublistId: sublistPkg,
+                fieldId: 'packagetrackingnumber',
+                line: i
+            });
 
-		if (!isEmpty(response))
-		{
-			if (response.code == 200)
-			{
-				XAuthorizationToken = response.headers["X-Authorization-token"];
-				
-			}
-			else
-			{
-				log.error({
-					title: proceso,
-					details: "generarToken - Error al generar token, codigo de error: "+response.code+" - response: "+JSON.stringify(response)+""
-				});
-			}
-		}
-		else
-		{
-			log.error({
-				title: proceso,
-				details: "generarToken - Response vacio"
-			});
+            arrayPackage.push(packagetrackingnumber);
+        }
 
-			return XAuthorizationToken;
-		}
-
-		return XAuthorizationToken;
+        return arrayPackage;
     }
 
     function isEmpty(value) {
