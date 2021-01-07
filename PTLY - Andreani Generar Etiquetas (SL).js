@@ -39,7 +39,7 @@ function(https, file, search, utilities) {
 								if (!utilities.isEmpty(apiConfig))
 								{
 									let tokenUrl = apiConfig.tokenURL;
-									let token = utilities.generarToken(tokenUrl);
+									let token = utilities.generarToken(tokenUrl, subsidiaria, accountId, environment);
 
 									log.debug(proceso, `LINE 44 token: ${token}`);
 

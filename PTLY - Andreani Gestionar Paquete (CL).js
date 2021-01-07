@@ -299,7 +299,7 @@ function(currentRecord, url, dialog, search, record, runtime) {
         {
             var cantidadPckg = clearSublistPackage(record);
 
-            if (cantidadPckg == 0)
+            /*if (cantidadPckg == 0)
             {
                 var message = {
                     title: title,
@@ -307,7 +307,7 @@ function(currentRecord, url, dialog, search, record, runtime) {
                 };
                 
                 dialog.alert(message);
-            }
+            }*/
         }
         else
         {
