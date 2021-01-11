@@ -75,6 +75,31 @@ function(search, message, dialog) {
                 }
             }
         }
+
+        // SI EL CAMBIO ES SOBRE EL CAMPO NOMBRE LEGAL
+        if (scriptContext.fieldId == 'custentity_l54_nombre_legal')
+        {
+            // SE TOMA EL NOMBRE LEGAL Y SE LE RETIRA CUALQUIER CARACTER ESPECIAL
+            var nombreLegal = record.getValue({
+                fieldId: 'custentity_l54_nombre_legal'
+            });
+
+            log.debug(process, 'nombreLegal.length: '+nombreLegal.length+ ' - nombreLegal: '+nombreLegal);
+
+            if (!isEmpty(nombreLegal))
+            {
+                var nombreLegalNew = limpiarString(nombreLegal);
+
+                log.debug(process, 'nombreLegalNew: '+nombreLegalNew);
+
+                // SE ACTUALIZA EL VAT REG NUMBER EN EL CAMPO DE NETSUITE Y CAMPO DE LOCALIZACIONES
+                record.setValue({
+                    fieldId: 'custentity_l54_nombre_legal',
+                    value: nombreLegalNew,
+                    ignoreFieldChange: true
+                });
+            }
+        }
         log.audit(process,'FIN');
     }
 
@@ -147,6 +172,11 @@ function(search, message, dialog) {
     function limpiarTaxNumber(taxNumber)
     {
         return taxNumber.replace(/\D/g,"");
+    }
+
+    function limpiarString (value)
+    {
+        return value.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi,'').trim();
     }
 
     function existeTaxNumber(taxNumber, idEntidad) {

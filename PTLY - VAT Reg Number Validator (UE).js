@@ -19,105 +19,6 @@ function(error, search) {
      */
     function beforeLoad(scriptContext) {
 
-        /*const proceso = 'Andreani Cotizar Envio - beforeLoad';
-
-        log.audit(proceso, 'INICIO');
-
-        const newRecord = scriptContext.newRecord;
-
-        const entity = newRecord.getValue({
-            fieldId: 'entity'
-        });
-
-        let validEntity = false;
-
-        const dataParams = getParams();
-
-        log.debug(proceso, 'dataParams: '+JSON.stringify(dataParams)+' - entity: '+entity);
-
-        if (!utilities.isEmpty(entity))
-        {
-            let strSQL = "SELECT \n Customer.\"CATEGORY\" AS categoryRAW \nFROM \n Customer\nWHERE \n Customer.\"ID\" = "+ entity +"\n";
-
-            let objPagedData = query.runSuiteQLPaged({
-                query: strSQL,
-                pageSize: 1
-            });
-
-            // Paging 
-            let arrResults = [];
-            
-            objPagedData.pageRanges.forEach(function(pageRange) {
-                //fetch
-                let objPage = objPagedData.fetch({ index: pageRange.index }).data;
-                // Map results to columns 
-                arrResults.push.apply(arrResults, objPage.asMappedResults());
-            });
-
-            log.debug({
-                title: proceso,
-                details: `arrResults: ${JSON.stringify(arrResults)}`
-            })
-
-            if (!utilities.isEmpty(arrResults) && arrResults.length > 0)
-            {
-                const customerCategory = arrResults[0].categoryraw;
-
-                if (!utilities.isEmpty(dataParams.categoriaCliente) && dataParams.categoriaCliente == customerCategory)
-                {
-                    validEntity = true;
-                }
-            }
-
-            log.debug({
-                title: proceso,
-                details: `validEntity: ${validEntity}`
-            })
-        }
-        else
-        {
-            validEntity = true;
-        }
-
-        if ((scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT || scriptContext.type == scriptContext.UserEventType.COPY) && validEntity)
-        {
-            let form = scriptContext.form;
-
-            form.clientScriptModulePath = './PTLY - Andreani Cotizar Envio (CL).js';
-
-            form.addButton({
-                id: 'custpage_call_stl',
-                label: 'Cotizador Andreani',
-                functionName: 'callPopUp()'
-            });
-
-            //CODIGO CLIENTE ANDREANI
-            let custpage_empresaTransporte = form.addField({
-                id:'custpage_empresatransporte',
-                label:'Andreani Empresa Transportista',
-                type: serverWidget.FieldType.TEXT
-            });
-
-            custpage_empresaTransporte.updateDisplayType({
-                displayType: serverWidget.FieldDisplayType.HIDDEN
-            });	
-
-            custpage_empresaTransporte.defaultValue = dataParams.empresaTransporte;
-
-            //CATEGORIA CLIENTE PERMITIDAD POPUP
-            let custpage_catclientepermitida = form.addField({
-                id:'custpage_catclientepermitida',
-                label:'Categoria Cliente Permitida',
-                type: serverWidget.FieldType.TEXT
-            });
-
-            custpage_catclientepermitida.updateDisplayType({
-                displayType: serverWidget.FieldDisplayType.HIDDEN
-            });	
-
-            custpage_catclientepermitida.defaultValue = dataParams.categoriaCliente;
-        }
-        log.audit(proceso, 'FIN');*/
     }
 
     /**
@@ -144,7 +45,11 @@ function(error, search) {
             fieldId: 'vatregnumber'
         });
 
-        log.debug(process, 'vatregnumber.length: '+vatregnumber.length);
+        let nombreLegal = newRecord.getValue({
+            fieldId: 'custentity_l54_nombre_legal'
+        });
+
+        log.debug(process, 'vatregnumber.length: '+vatregnumber.length+ ' -nombreLegal: '+nombreLegal);
 
         if (!isEmpty(vatregnumber))
         {
@@ -177,6 +82,19 @@ function(error, search) {
                 throw(errorMessage);
             }
         }
+
+        if (!isEmpty(nombreLegal))
+        {
+            let nombreLegalNew = limpiarString(nombreLegal);
+
+            log.debug(process, 'recId: '+ recId +' - nombreLegalNew: '+nombreLegalNew + ' - nombreLegalNew.length: ' + nombreLegalNew.length);
+
+            newRecord.setValue({
+                fieldId: 'custentity_l54_nombre_legal',
+                value: nombreLegalNew/*,
+                ignoreFieldChange: true*/
+            });
+        }
         log.audit(process,'FIN');
     }
 
@@ -196,6 +114,11 @@ function(error, search) {
     let limpiarTaxNumber = (taxNumber) =>
     {
         return taxNumber.replace(/\D/g,"");
+    }
+
+    let limpiarString = (value) =>
+    {
+        return value.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi,'').trim();
     }
 
     let existeTaxNumber = (taxNumber, idEntidad) =>
