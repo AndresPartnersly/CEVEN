@@ -1,6 +1,5 @@
 /**
  * @NApiVersion 2.1
- * @NAmdConfig /SuiteScripts/configuration.json
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
@@ -49,7 +48,11 @@ function(error, search) {
             fieldId: 'custentity_l54_nombre_legal'
         });
 
-        log.debug(process, 'vatregnumber.length: '+vatregnumber.length+ ' -nombreLegal: '+nombreLegal);
+        let companyname = newRecord.getValue({
+            fieldId: 'companyname'
+        });
+
+        log.debug(process, 'vatregnumber.length: '+vatregnumber.length+ ' -nombreLegal: '+nombreLegal + ' - companyname: '+companyname);
 
         if (!isEmpty(vatregnumber))
         {
@@ -92,6 +95,19 @@ function(error, search) {
             newRecord.setValue({
                 fieldId: 'custentity_l54_nombre_legal',
                 value: nombreLegalNew/*,
+                ignoreFieldChange: true*/
+            });
+        }
+
+        if (!isEmpty(companyname))
+        {
+            let companynameNew = limpiarString(companyname);
+
+            log.debug(process, 'recId: '+ recId +' - companynameNew: '+companynameNew + ' - companynameNew.length: ' + companynameNew.length);
+
+            newRecord.setValue({
+                fieldId: 'companyname',
+                value: companynameNew/*,
                 ignoreFieldChange: true*/
             });
         }

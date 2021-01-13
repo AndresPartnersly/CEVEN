@@ -100,6 +100,69 @@ function(search, message, dialog) {
                 });
             }
         }
+
+        // SI EL CAMBIO ES SOBRE EL CAMPO COMPANY NAME
+        if (scriptContext.fieldId == 'companyname')
+        {
+            // SE TOMA EL NOMBRE LEGAL Y SE LE RETIRA CUALQUIER CARACTER ESPECIAL
+            var companyName = record.getValue({
+                fieldId: 'companyname'
+            });
+
+            var autoname = record.getValue({
+                fieldId: 'autoname'
+            });
+
+            log.debug(process, 'companyName.length: '+companyName.length+ ' - companyName: '+companyName +' - autoname: '+autoname);
+
+            if (!isEmpty(companyName))
+            {
+                var companyNameNew = limpiarString(companyName);
+
+                log.debug(process, 'companyNameNew: '+companyNameNew);
+
+                // SE ACTUALIZA EL VAT REG NUMBER EN EL CAMPO DE NETSUITE Y CAMPO DE LOCALIZACIONES
+                record.setValue({
+                    fieldId: 'companyName',
+                    value: companyNameNew,
+                    ignoreFieldChange: true
+                });
+
+                if (autoname)
+                {
+                    record.setValue({
+                        fieldId: 'entityid',
+                        value: companyNameNew,
+                        ignoreFieldChange: true
+                    }); 
+                }
+            }
+        }
+
+        // SI EL CAMBIO ES SOBRE EL CAMPO ENTITY ID
+        if (scriptContext.fieldId == 'entityid')
+        {
+            // SE TOMA EL NOMBRE LEGAL Y SE LE RETIRA CUALQUIER CARACTER ESPECIAL
+            var entityid = record.getValue({
+                fieldId: 'entityid'
+            });
+
+            log.debug(process, 'entityid.length: '+entityid.length+ ' - entityid: '+entityid);
+
+            if (!isEmpty(entityid))
+            {
+                var entityidNew = limpiarString(entityid);
+
+                log.debug(process, 'entityidNew: '+entityidNew);
+
+                // SE ACTUALIZA EL VAT REG NUMBER EN EL CAMPO DE NETSUITE Y CAMPO DE LOCALIZACIONES
+                record.setValue({
+                    fieldId: 'entityid',
+                    value: entityidNew,
+                    ignoreFieldChange: true
+                });
+            }
+        }
         log.audit(process,'FIN');
     }
 
