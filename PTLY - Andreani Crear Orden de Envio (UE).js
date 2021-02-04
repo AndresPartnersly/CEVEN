@@ -533,8 +533,8 @@ function(query, utilities, https, search, runtime, query, record) {
     let setAndreaniResponse = (canPck, record, arrayBultos, respObj, scriptParams, esb2c, esb2b) => {
 
         let procesado = false;
-        log.debug('LINE 536 - setAndreaniResponse', `canPck: ${canPck} - record: ${JSON.stringify(record)} - arrayBultos: ${JSON.stringify(arrayBultos)} - respObj: ${JSON.stringify(respObj)}`);
-        log.debug('LINE 537 - setAndreaniResponse', `respObj.code: ${respObj.code} - scriptParams: ${scriptParams} - esb2c: ${esb2c} - esb2b: ${esb2b} - arrayBultos[0].numeroDeEnvio: ${arrayBultos[0].numeroDeEnvio}`);
+        log.debug('LINE 536 - setAndreaniResponse', `arrayBultos: ${JSON.stringify(arrayBultos)} -canPck: ${canPck} - record: ${JSON.stringify(record)} - respObj: ${JSON.stringify(respObj)}`);
+        log.debug('LINE 537 - setAndreaniResponse', `respObj.code: ${respObj.code} - scriptParams: ${scriptParams} - esb2c: ${esb2c} - esb2b: ${esb2b}`);
         if (respObj.code == 202)
         {
             for (i = 0; i < canPck; i++)
