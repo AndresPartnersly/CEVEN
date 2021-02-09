@@ -323,66 +323,75 @@ function(currentRecord, url, dialog, search, record, runtime) {
     
     function imprimirEtiqueta()
     {
-        var title = 'Mensaje';
-        var proceso = 'imprimirEtiqueta';
-
-        /*var message = {
-            title: title,
-            message: "El proceso puede demorar unos segundos ya que consulta un servicio externo de Andreani"
-        };
-
-        dialog.alert(message); */
-
-        var recordObj = currentRecord.get();
-        var recId = recordObj.id;
-
-        var recordItemfullfilment = record.load({
-            type: record.Type.ITEM_FULFILLMENT,
-            id: recId,
-            isDynamic: true
-        });
-
-        console.log(proceso, 'LINE 344 - recordItemfullfilment: '+ JSON.stringify(recordItemfullfilment));
-
-        if (!isEmpty(recordItemfullfilment))
+        try
         {
-            var accountId = runtime.accountId;
-            var environment = runtime.envType;
-            var arrayPackage = getPackagesData(recordItemfullfilment);
-            var tranid = recordItemfullfilment.getValue({
-                fieldId: 'tranid'
-            });
-            var subsidiaria = recordItemfullfilment.getValue({
-                fieldId: 'subsidiary'
+            var proceso = 'imprimirEtiqueta';
+
+            var recordObj = currentRecord.get();
+            var recId = recordObj.id;
+
+            var recordItemfullfilment = record.load({
+                type: record.Type.ITEM_FULFILLMENT,
+                id: recId,
+                isDynamic: true
             });
 
-            console.log(proceso, 'LINE 350 - arrayPackage: '+JSON.stringify(arrayPackage));
+            //console.log(proceso, 'LINE 339 - recordItemfullfilment: '+ JSON.stringify(recordItemfullfilment));
 
-            if (!isEmpty(arrayPackage))
+            if (!isEmpty(recordItemfullfilment))
             {
-                for (i = 0; i < arrayPackage.length; i++)
+                var accountId = runtime.accountId;
+                var environment = runtime.envType;
+                var arrayPackage = getPackagesData(recordItemfullfilment);
+                var tranid = recordItemfullfilment.getValue({
+                    fieldId: 'tranid'
+                });
+                var subsidiaria = recordItemfullfilment.getValue({
+                    fieldId: 'subsidiary'
+                });
+                var esEnvB2B = recordItemfullfilment.getValue({
+                    fieldId: 'custbody_ptly_env_b2b'
+                });
+                var nroEnvB2B = recordItemfullfilment.getValue({
+                    fieldId: 'custbody_ptly_nro_env_b2b'
+                });
+
+                //console.log(proceso, 'LINE 359 - arrayPackage: '+JSON.stringify(arrayPackage));
+
+                if (!isEmpty(arrayPackage))
                 {
-                    idPackage = arrayPackage[i];
+                    if ((esEnvB2B== true || esEnvB2B=='T') && !isEmpty(nroEnvB2B))
+                    {
+                        arrayPackage.push(nroEnvB2B);
+                        //console.log(proceso, 'LINE 366 - arrayPackage: '+JSON.stringify(arrayPackage));
+                    }   
 
-                    console.log('LINE 358 - recId: '+recId+' - indice: '+ i +' - idPackage: ' + idPackage+' - tranid: ' + tranid+' - subsidiaria: ' + subsidiaria+' - accountId: ' + idPackage+' - environment: ' + environment);
+                    for (i = 0; i < arrayPackage.length; i++)
+                    {
+                        idPackage = arrayPackage[i];
 
-                    var new_url = url.resolveScript({
-                        scriptId: 'customscript_ptly_gen_etiqueta_andreani',
-                        deploymentId: 'customdeploy_ptly_gen_etiqueta_andreani',
-                        params: {
-                            idPackage: idPackage,
-                            tranid: tranid,
-                            subsidiaria: subsidiaria,
-                            accountId: accountId,
-                            environment: environment
-                        }
-                    });
-            
-                    console.log('LINE 366 - new_url: '+new_url+' - recId: '+recId+' - indice: '+ i +' - idPackage: ' + idPackage);
-            
-                    window.open(new_url);
+                        //console.log('LINE 373 - recId: '+recId+' - indice: '+ i +' - idPackage: ' + idPackage+' - tranid: ' + tranid+' - subsidiaria: ' + subsidiaria+' - accountId: ' + idPackage+' - environment: ' + environment);
+                        var new_url = url.resolveScript({
+                            scriptId: 'customscript_ptly_gen_etiqueta_andreani',
+                            deploymentId: 'customdeploy_ptly_gen_etiqueta_andreani',
+                            params: {
+                                idPackage: idPackage,
+                                tranid: tranid,
+                                subsidiaria: subsidiaria,
+                                accountId: accountId,
+                                environment: environment
+                            }
+                        });
+                
+                        //console.log('LINE 386 - new_url: '+new_url+' - recId: '+recId+' - indice: '+ i +' - idPackage: ' + idPackage);
+                        window.open(new_url);
+                    }
                 }
             }
+        }
+        catch(e)
+        {
+            console.log('imprimirEtiqueta - Excepcion en el proceso: '+JSON.stringify(e));
         }
     }
 

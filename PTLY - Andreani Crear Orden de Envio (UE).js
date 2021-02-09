@@ -117,7 +117,7 @@ function(query, utilities, https, search, runtime, query, record) {
                             {
                                 if (arrayConfig.length > 0)
                                 {
-                                    let meEnv = arrayConfig[0].idmetodoenvio;
+                                    //let meEnv = arrayConfig[0].idmetodoenvio;
                                     let esEnvSuc = arrayConfig[0].esenvsuc;
                                     let esb2c = arrayConfig[0].esb2c;
                                     let esb2b = arrayConfig[0].esb2b;
@@ -148,6 +148,8 @@ function(query, utilities, https, search, runtime, query, record) {
                                         let shipmethod = newRecord.getValue({
                                             fieldId: 'shipmethod'
                                         });
+
+                                        let meEnv = getMetodoEnvTransaction(arrayConfig[0].idmetodoenvio, shipmethod);
                     
                                         log.debug(proceso, `152 - meEnv: ${meEnv} - idContratoAndreani ${idContratoAndreani} - sucId: ${sucId} - contrato: ${contrato} - shipmethod: ${shipmethod}`);
                     
@@ -972,6 +974,23 @@ function(query, utilities, https, search, runtime, query, record) {
             }
         }
         return arrayBultos;
+    }
+
+    let getMetodoEnvTransaction = (arrayMeConfig, meTransaction) =>
+    {
+        let arreglo = [];
+        let arrayProcesar = arrayMeConfig.split(", ");
+
+        arreglo = arrayProcesar.filter(function(element){
+
+            if (element == meTransaction)
+            {
+                return arreglo;
+            }
+            
+        });
+
+        return arreglo;
     }
 
     return {
