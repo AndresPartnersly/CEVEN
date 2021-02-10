@@ -4,39 +4,35 @@
  *@NScriptType MapReduceScript
  *@NModuleScope Public
  */
-define(['N/record', 'N/search', 'N/https'],
+define(['N/record', 'N/search', 'N/https', 'N/runtime'],
 
-function (record, search, https) {
-
-    var proceso = "PTLY - MercadoPago Notifications Process.js";
+function (record, search, https, runtime) {
 
     function getParams() {
         
-        var response = { error: false, mensaje:'', contextocrear:'', contextomodificar:'' };
+        var body = { error: false, mensaje:'', contextocrear:'', contextomodificar:'' };
         
         try {
             var currScript = runtime.getCurrentScript();
-            response.subsidiary = currScript.getParameter('custscript_ptly_notif_process_sub');
+            body.subsidiary = currScript.getParameter('custscript_ptly_notif_process_sub');
         } catch (e) {
-            response.error = true;
-            response.mensaje = "Netsuite Error - Excepción: " + e.message;
+            body.error = true;
+            body.mensaje = "Netsuite Error - Excepción: " + e.message;
         }
 
-        return response;
+        return body;
     }
 
     function getInputData() {
+        
+        const proceso = "PTLY - MercadoPago Notifications Process - GetInputData";
+        let dataProcesar = [];
 
         log.audit(proceso, 'GetInputData - INICIO');
 
-        var dataProcesar = [];
-        var dataProcesarMap = [];
-        var idJournals = [];
-
         try{
-
             //Se obtienen los parametros del script
-            var dataParams = getParams();
+            let dataParams = getParams();
 
             log.debug(proceso, "getParams RESPONSE: " + JSON.stringify(dataParams));
 
@@ -44,173 +40,76 @@ function (record, search, https) {
 
                 try
                 {
-                    let response = https.get({
+                    let hearders = {
+                        name: 'Content-Type',
+                        value: 'application/json'
+                    }
+
+                    let request = https.get({
                         url: 'https://checkoutsbx.herokuapp.com/getNotifications',
+                        hearders: hearders
                     }); 
 
-                    console.log('response: '+JSON.stringify(response));
+                    log.debug(proceso,'request: '+JSON.stringify(request));
+
+                    if (!isEmpty(request))
+                    {
+                        if (request.code == 200)
+                        {
+                            let body = JSON.parse(request.body);
+
+                            log.debug(proceso,'body: '+JSON.stringify(body));
+        
+                            for (let i=0; i < body.notifications.length; i++)
+                            {
+                                let obj = {};
+
+                                let newRecord = record.create({
+                                    type: 'customrecord_ptly_mp_notific'
+                                });
+    
+                                newRecord.setValue({
+                                    fieldId: 'externalid',
+                                    value: body.notifications[i]._id
+                                });
+    
+                                newRecord.setValue({
+                                    fieldId: 'custrecord_ptly_mp_notific_type',
+                                    value: body.notifications[i].type
+                                });
+    
+                                newRecord.setValue({
+                                    fieldId: 'custrecord_ptly_mp_notific_id',
+                                    value: body.notifications[i].id
+                                });
+    
+                                newRecord.setValue({
+                                    fieldId: 'custrecord_ptly_mp_notific_sub',
+                                    value: dataParams.subsidiary
+                                });
+    
+                                let idRecord =  newRecord.save();
+    
+                                log.debug(proceso, 'ID Registro: '+idRecord);
+    
+                                if(!isEmpty(idRecord))
+                                {
+                                    obj.idMongo = body.notifications[i]._id;
+                                    obj.idNS = body.notifications[i].idRecord;
+                                    obj.type = body.notifications[i].type;
+                                    obj.id = body.notifications[i].id;
+                                    dataProcesar.push(idRecord);
+                                }
+                            } 
+                        }
+                    }
                 }
                 catch(e)
                 {
-
+                    log.error(proceso, JSON.stringify(e.message));
                 }
 
-                //INICIO - Se cargan las transacciones de entrada de diario creadas para el ajuste de las transacciones
-                var ssJournals = search.load({
-                    id: 'customsearch_ptly_jounals_adjust',
-                    type: search.Type.TRANSACTION
-                })
-
-                // Filtro subsidiaria
-                var ssJournalsFilterSub = search.createFilter({
-                    name: 'subsidiary',
-                    operator: search.Operator.IS,
-                    values: dataParams.subsidiary
-                });
-                ssJournals.filters.push(ssJournalsFilterSub);
-
-                // Filtro moneda
-                var ssJournalsFilterCurr = search.createFilter({
-                    name: 'currency',
-                    operator: search.Operator.IS,
-                    values: dataParams.currency
-                });
-                ssJournals.filters.push(ssJournalsFilterCurr);
-
-                var ssJournalsRun = ssJournals.run();
-                var ssJournalsRunRange = ssJournalsRun.getRange({
-                    start: 0,
-                    end: 1000
-                }); 
-                log.debug(proceso, "GetInputData - LINE 76 - ssJournalsRunRange.length: "+ ssJournalsRunRange.length);
-                for (var h = 0; h < ssJournalsRunRange.length; h++)
-                {
-                    idJournals.push(ssJournalsRunRange[h].getValue(ssJournalsRun.columns[0]));
-                }
-                //FIN - Se cargan las transacciones de entrada de diario creadas para el ajuste de las transacciones
-
-                log.debug(proceso, "GetInputData - LINE 83 - idJournals: "+JSON.stringify(idJournals));
-
-
-                //Si existen entradas de diarios para ajustar se avanza con el proceso
-                if (!isEmpty(idJournals) && idJournals.length > 0)
-                {
-                    //Se cargan los pagos de cliente, notas de credito y aplicaciones de deposito a ajustar
-                    var ssTransactions = search.load({
-                        id:'customsearch_ptly_custpayment_pend',
-                        type: search.Type.TRANSACTION
-                    });
-
-                    // Filtro subsidiaria
-                    var ssTransactionsFilterSub = search.createFilter({
-                        name: 'subsidiary',
-                        operator: search.Operator.IS,
-                        values: dataParams.subsidiary
-                    })
-                    ssTransactions.filters.push(ssTransactionsFilterSub);
-
-                    // Filtro subsidiaria
-                    var ssTransactionsFilterCurr = search.createFilter({
-                        name: 'currency',
-                        operator: search.Operator.IS,
-                        values: dataParams.currency
-                    })
-                    ssTransactions.filters.push(ssTransactionsFilterCurr);
-   
-                    var ssTransactionsRun = ssTransactions.run()
-                    var ssTransactionsRunRange = ssTransactionsRun.getRange({
-                        start: 0,
-                        end: 1000
-                    });
-
-                    log.debug(proceso, "GetInputData - LINE 117 - ssTransactionsRunRange: "+ssTransactionsRunRange.length);
-                    if (ssTransactionsRunRange.length > 0)
-                    {
-                        for (var i = 0; i < ssTransactionsRunRange.length; i++)
-                        {
-                            var object = {};
-                            object.idCustomer = ssTransactionsRunRange[i].getValue(ssTransactionsRun.columns[6]);
-                            object.subsidiary = ssTransactionsRunRange[i].getValue(ssTransactionsRun.columns[12]);
-                            object.currency   = ssTransactionsRunRange[i].getValue(ssTransactionsRun.columns[11]);
-                            object.idPayment  = ssTransactionsRunRange[i].getValue(ssTransactionsRun.columns[0]);
-                            object.nroLocalizado = ssTransactionsRunRange[i].getValue(ssTransactionsRun.columns[5]);
-                            object.araccount = dataParams.araccount;
-                            object.payMethod = dataParams.payMethod;
-                            object.adjustPositiveBalance = dataParams.adjustPositiveBalance;
-                            object.journals = idJournals;
-                            dataProcesar.push(object);
-                        }
-        
-                        log.debug(proceso, 'dataProcesar: '+JSON.stringify(dataProcesar));
-                    }
-                    else
-                    {
-                        var mensaje = 'No existen transacciones de tipo pagos de cliente, nota de credito o aplicacion de deposito a saldar y/o ajustar';
-                        log.error(proceso, mensaje);
-                    }
-                    //FIN - Se cargan los asientos a aplicar para cargar en arreglo
-
-
-                    //INICIO - Se cargan las entradas de diario a ajustar
-                    var ssJournalsAdjust = search.load({
-                        id: 'customsearch_ptly_custpayment_pend_3',
-                        type: search.Type.TRANSACTION
-                    });
-
-                    // Filtro subsidiaria
-                    var ssJournalsAdjustFilterSub = search.createFilter({
-                        name: 'subsidiary',
-                        operator: search.Operator.IS,
-                        values: dataParams.subsidiary
-                    })
-                    ssJournalsAdjust.filters.push(ssJournalsAdjustFilterSub);
-
-                    // Filtro subsidiaria
-                    var ssJournalsAdjustFilterCurr = search.createFilter({
-                        name: 'currency',
-                        operator: search.Operator.IS,
-                        values: dataParams.currency
-                    })
-                    ssJournalsAdjust.filters.push(ssJournalsAdjustFilterCurr);
-   
-                    var ssJournalsAdjustRun = ssJournalsAdjust.run()
-                    var ssJournalsAdjustRunRange = ssJournalsAdjustRun.getRange({
-                        start: 0,
-                        end: 1000
-                    });
-
-                    log.debug(proceso, "GetInputData - LINE 173 - ssJournalsAdjustRunRange: "+ssJournalsAdjustRunRange.length);
-                    if (ssJournalsAdjustRunRange.length > 0)
-                    {
-                        for (var i = 0; i < ssJournalsAdjustRunRange.length; i++)
-                        {
-                            var object = {};
-                            object.idCustomer = ssJournalsAdjustRunRange[i].getValue(ssJournalsAdjustRun.columns[6]);
-                            object.subsidiary = ssJournalsAdjustRunRange[i].getValue(ssJournalsAdjustRun.columns[12]);
-                            object.currency   = ssJournalsAdjustRunRange[i].getValue(ssJournalsAdjustRun.columns[11]);
-                            object.idPayment  = ssJournalsAdjustRunRange[i].getValue(ssJournalsAdjustRun.columns[0]);
-                            object.nroLocalizado = ssJournalsAdjustRunRange[i].getValue(ssJournalsAdjustRun.columns[5]);
-                            object.araccount = dataParams.araccount;
-                            object.payMethod = dataParams.payMethod;
-                            object.adjustPositiveBalance = dataParams.adjustPositiveBalance;
-                            object.journals = idJournals;
-                            dataProcesar.push(object);
-                        }
-        
-                        log.debug(proceso, 'dataProcesar: '+JSON.stringify(dataProcesar));
-                    }
-                    else
-                    {
-                        var mensaje = 'No existen entradas de diario a saldar y/o ajustar';
-                        log.error(proceso, mensaje);
-                    }
-                    //FIN - Se cargan las entradas de diario a ajustar
-                }
-                else
-                {
-                    var mensaje = 'No existen asientos para aplicar, fin del proceso';
-                    log.error(proceso, mensaje);
-                }
+                log.debug(proceso, 'dataProcesar: '+JSON.stringify(dataProcesar));
 
                 return dataProcesar;
 
@@ -226,14 +125,26 @@ function (record, search, https) {
 
     function map(context) {
 
+        
+        const proceso = "PTLY - MercadoPago Notifications Process - Map";
         log.audit(proceso, 'Map - INICIO');
 
-        try {
-
+        try
+        {
             var resultado = context.value;
-            log.debug(proceso, 'Map - LINE 225 - resultado: '+JSON.stringify(resultado));
+            log.debug(proceso, 'Map - LINE 135 - resultado: '+JSON.stringify(resultado));
 
             if (!isEmpty(resultado)) {
+
+                for (let i=0; i < resultado.length; i++)
+                {
+                    let obj = {};
+                    obj.idMongo = resultado[i].idMongo;
+                    obj.idNS = resultado[i].idNS;
+                    obj.type = resultado[i].type;
+                    obj.id = resultado[i].id;
+                    obj.urlMPSearchPayment = `https://api.mercadopago.com/v1/payments/search?id=${resultado[i].id}`;
+                }
 
                 var searchResult = JSON.parse(resultado);
                 var obj = searchResult;
@@ -544,7 +455,7 @@ function (record, search, https) {
 
     return {
         getInputData: getInputData,
-        /*map: map,
+        map: map/*,
         reduce: reduce,
         summarize: summarize*/
     }
