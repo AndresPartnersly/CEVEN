@@ -237,7 +237,8 @@ function(query, utilities, https, search, runtime, query, record) {
                                                                                 
                                                                                 if (!utilities.isEmpty(arrayBultos) && body.bultos.length > 0 && cantPackage == body.bultos.length)
                                                                                 {
-                                                                                    let response = setAndreaniResponse(cantPackage, newRecord, arrayBultos, respCrearOE, scriptParams,  esb2c, esb2b);
+                                                                                    let response = setAndreaniResponse(cantPackage, newRecord, arrayBultos, respCrearOE, scriptParams, esb2c, esb2b);
+
                                                                                     log.debug(proceso, `response ${response}`);
                 
                                                                                     if (response)
@@ -567,10 +568,13 @@ function(query, utilities, https, search, runtime, query, record) {
                 value: canPck
             });
 
-            record.setValue({
-                fieldId: 'custbody_l54_valor_declarado',
-                value: 100.00
-            });
+            if (!utilities.isEmpty(record.getValue({fieldId: 'createdfrom'})))
+            {
+                record.setValue({
+                    fieldId: 'custbody_l54_valor_declarado',
+                    value: getValorDeclarado(record, record.getValue({fieldId: 'createdfrom'}))
+                });
+            }
 
             record.setValue({
                 fieldId: 'custbody_ptly_est_pr_oe_andreani',
@@ -991,6 +995,93 @@ function(query, utilities, https, search, runtime, query, record) {
         });
 
         return arreglo;
+    }
+
+    let getValorDeclarado = (record, idSO) => {
+
+        let arrayItemsSo = [];//ALMACENA LA DATA DE LA SALES ORDER (ITEM Y RATE)
+        let dataItemFullfilment = [];//ALMACENA LA DATA DEL FULLFILMENT (ITEM Y QUANTITY)
+
+        let arrayItemsFullfil = [];//ALMACENA LOS ITEMS DEL FULLFILMENT
+
+        let valorDeclarado = 0.00;
+
+        //CANTIDAD DE ARTICULOS
+        cantItems = record.getLineCount({
+            sublistId: sublist
+        });
+
+        for (let j = 0; j < cantItems; j++)
+        {
+            let objeto = {};
+
+            objeto.item = record.getSublistValue({
+                sublistId: sublist,
+                fieldId: 'item',
+                line: j
+            });
+
+            objeto.quantity = record.getSublistValue({
+                sublistId: sublist,
+                fieldId: 'quantity',
+                line: j
+            });
+            dataItemFullfilment.push(objeto);
+            arrayItemsFullfil.push(objeto.item);
+        }
+
+        if (arrayItemsFullfil.length > 0)
+        {
+            let ssItemsSo= search.load({
+                id: 'customsearch_ptly_so_itemdetail_andreani',
+                type: search.Type.TRANSACTION
+            })
+
+            let ssIdFilter = search.createFilter({
+                name: 'internalid',
+                operator: search.Operator.IS,
+                values: idSO
+            });
+            ssItemsSo.filters.push(ssIdFilter);
+    
+            let ssItemsFilter = search.createFilter({
+                name: 'item',
+                operator: search.Operator.ANYOF,
+                values: arrayItemsFullfil
+            });
+            ssItemsSo.filters.push(ssItemsFilter);
+    
+            let ssItemsSoRun = ssItemsSo.run();
+            let ssItemsSoRunRange = ssItemsSoRun.getRange({
+                start: 0,
+                end: 1000
+            }); 
+    
+            for (let j = 0; j < ssItemsSoRunRange.length; j++)
+            {
+                let objeto = {};
+                objeto.item = ssItemsSoRunRange[j].getValue(ssItemsSoRun.columns[0]);
+                objeto.rate = ssItemsSoRunRange[j].getValue(ssItemsSoRun.columns[1]);
+                arrayItemsSo.push(objeto);
+            }
+
+            if (arrayItemsSo.length > 0)
+            {
+                for (let j = 0; j < dataItemFullfilment.length; j++)
+                {
+                    var newArray = arrayItemsSo.filter(function(value)
+                    {
+                        if (value.item == dataItemFullfilment[j].item)
+                        {
+                            let calculo = parseFloat(dataItemFullfilment[j].quantity,10) * parseFloat(value.rate,10);
+                            valorDeclarado = parseFloat(valorDeclarado,10) + parseFloat(calculo,10);
+                        }
+                    });
+                }
+            }
+        }
+
+        return valorDeclarado;
     }
 
     return {
