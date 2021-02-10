@@ -10,10 +10,10 @@ function (record, search, https, runtime) {
 
     function getParams() {
         
-        var body = { error: false, mensaje:'', contextocrear:'', contextomodificar:'' };
+        let body = { error: false, mensaje:'', contextocrear:'', contextomodificar:'' };
         
         try {
-            var currScript = runtime.getCurrentScript();
+            let currScript = runtime.getCurrentScript();
             body.subsidiary = currScript.getParameter('custscript_ptly_notif_process_sub');
         } catch (e) {
             body.error = true;
@@ -141,21 +141,16 @@ function (record, search, https, runtime) {
             let resultado = JSON.parse(context.value);
             log.debug(proceso, 'Map - LINE 135 - resultado: '+JSON.stringify(resultado));
 
-            if (!isEmpty(resultado)) {
-
-                /*for (let i=0; i < resultado.length; i++)
-                {*/
+            if (!isEmpty(resultado))
+            {
                 let obj = {};
                 obj.idMongo = resultado.idMongo;
                 obj.idNS = resultado.idNS;
                 obj.type = resultado.type;
                 obj.id = resultado.id;
                 obj.urlMPSearchPayment = `https://api.mercadopago.com/v1/payments/search?id=${resultado.id}`;
-                //}
                 log.debug(proceso, 'Map - LINE 148 - obj: '+JSON.stringify(obj));
-                //var searchResult = JSON.parse(resultado);
-                //var obj = searchResult;
-                var key = obj.idMongo;
+                let key = obj.idMongo;
                 context.write(key, JSON.stringify(obj));
             }
 
@@ -167,219 +162,106 @@ function (record, search, https, runtime) {
 
     function reduce(context) {
 
+        const proceso = "PTLY - MercadoPago Notifications Process - Reduce";
+
         log.audit(proceso, 'Reduce - INICIO');
 
-        var respuesta = { error: false, idClave: context.key, messages: [], detalle_error: '', idTransaccion: '' };
-        var mensaje = "";
+        let respuesta = { error: false, key: context.key, messages: [], detalle_error: '', data: {} };
+        let mensaje = "";
 
-        try {
+        try
+        {
+            log.debug(proceso, 'Reduce - LINE 174 - context : ' + context);
 
-            log.debug(proceso, 'Reduce - LINE 253 - context : ' + JSON.stringify(context));
-
-            if (!isEmpty(context.values) && context.values.length > 0) {
-
-                for (var k = 0; k < context.values.length; k++)
+            if (!isEmpty(context.values) && context.values.length > 0)
+            {
+                for (let k = 0; k < context.values.length; k++)
                 {
-                    var registro = JSON.parse(context.values[k]);
-                    respuesta.idTransaccion = `${registro.idPayment} - Numero Localizado: ${registro.nroLocalizado}`;
-                    log.debug(proceso,'Reduce - LINE 261 - registro: '+JSON.stringify(registro));
-            
-                    var newRecord = record.create({
-                        type: record.Type.CUSTOMER_PAYMENT,
-                        isDynamic: true
-                    });
-            
-                    newRecord.setValue({
-                        fieldId: 'customer',
-                        value: registro.idCustomer
-                    });
-            
-                    newRecord.setValue({
-                        fieldId: 'subsidiary',
-                        value: registro.subsidiary
-                    });
-            
-                    newRecord.setValue({
-                        fieldId: 'aracct',
-                        value: registro.araccount
-                    });
-            
-                    newRecord.setValue({
-                        fieldId: 'currency',
-                        value: registro.currency
-                    });
-            
-                    newRecord.setValue({
-                        fieldId: 'memo',
-                        value: `Ajuste de saldo Pago ${registro.nroLocalizado}`
-                    });
-            
-                    newRecord.setValue({
-                        fieldId: 'paymentmethod',
-                        value: registro.payMethod
-                    });
-            
-                    //Se valida si el pago a saldar figura en la sublista de creditos
-                    const sublistcredit = 'credit'; 
-                    const sublistapply = 'apply'; 
-                    var existeCredito = false;
-                    var existeAsiento = false;
-                    var creditAmount = 0.00;
-                    var journalAmount = 0.00;
-                    var sublist = ''
-
-                    if (!registro.adjustPositiveBalance)
-                        sublist = sublistcredit;
-                    else
-                        sublist = sublistapply;
-
-                    var countLinesCredit = newRecord.getLineCount({ sublistId: sublist });
-
-                    log.debug(proceso,'Reduce - LINE 314 - countLines'+sublist+': '+countLinesCredit);
-            
-                    for (k = 0; k < countLinesCredit; k++)
+                    let data = JSON.parse(context.values[k]);
+                    let urlRequest = data.urlMPSearchPayment;
+                    log.debug(proceso, 'Reduce - LINE 182 - urlRequest : ' + urlRequest);
+                    
+                    try
                     {
-                        newRecord.selectLine({
-                            sublistId: sublist,
-                            line: k
-                        });
-            
-                        var docNumber = newRecord.getCurrentSublistValue({
-                            sublistId: sublist,
-                            fieldId: 'doc'
-                        });
-            
-                        log.debug(proceso,'Reduce - LINE 328 - docNumber: '+docNumber+' - registro.idPayment: '+registro.idPayment);
-                        if (docNumber == registro.idPayment)
-                        {
-                            existeCredito = true;
-        
-                            newRecord.setCurrentSublistValue({
-                                sublistId: sublist,
-                                fieldId: 'apply',
-                                value: true,
-                                ignoreFieldChange: false
-                            });
-        
-                            newRecord.commitLine({
-                                sublistId:sublist
-                            });
-        
-                            creditAmount = newRecord.getCurrentSublistValue({
-                                sublistId: sublist,
-                                fieldId: 'amount'
-                            });
-        
-                            log.debug(proceso,`Credito ID ${registro.idPayment} marcado - amountApplyCredito: ${creditAmount}`);
+                        let hearders = {
+                            name: 'Authorization',
+                            value: 'Bearer TEST-232057640758695-012821-b8a871d3c1152919e6962c9db6dca556-281377671'
                         }
-                    }
-                   
-                    //Si se encontró credito a favor del cliente, se busca el asiento correspondiente
-                    if (existeCredito && creditAmount > 0)
-                    {
-                        if (!registro.adjustPositiveBalance)
-                            sublist = sublistapply;
-                        else
-                            sublist = sublistcredit;
-
-                        var countLinesApply = newRecord.getLineCount({ sublistId: sublist });
-                        log.debug(proceso,'Reduce - LINE 362 - countLines'+sublist+': '+countLinesApply);
-
-                        if (countLinesApply > 0)
-                        {
-                            for (j = 0; j < countLinesApply; j++)
-                            {
-                                newRecord.selectLine({
-                                    sublistId: sublist,
-                                    line: j
-                                });
-            
-                                var docNumber = newRecord.getCurrentSublistValue({
-                                    sublistId: sublist,
-                                    fieldId: 'doc'
-                                });
-
-                                var lineAmount = newRecord.getCurrentSublistValue({
-                                    sublistId: sublist,
-                                    fieldId: 'due'
-                                });
-            
-                                //Se valida si el asiento que figura en la transaccion (sublista apply) coincide con uno de los asientos de ajustes generados
-                                if (!isEmpty(docNumber))
-                                {
-                                    log.debug(proceso,'Reduce - LINE 386 - indice: '+j +' - docNumber: '+docNumber+' - lineAmount: '+lineAmount + ' - creditAmount: '+creditAmount);
-
-                                    var arrayTemporal =  registro.journals.filter(function (elemento) {
-                                        
-                                        if (elemento == docNumber && creditAmount == lineAmount)
-                                        {
-                                            existeAsiento = true;
     
-                                            newRecord.setCurrentSublistValue({
-                                                sublistId: sublist,
-                                                fieldId: 'apply',
-                                                value: true,
-                                                ignoreFieldChange: false
-                                            });
-        
-                                            newRecord.setCurrentSublistValue({
-                                                sublistId: sublist,
-                                                fieldId: 'amount',
-                                                value: creditAmount,
-                                                ignoreFieldChange: false
-                                            });
-                
-                                            newRecord.commitLine({
-                                                sublistId: sublist
-                                            });
-        
-                                            journalAmount = newRecord.getCurrentSublistValue({
-                                                sublistId: sublist,
-                                                fieldId: 'amount'
+                        let request = https.get({
+                            url: urlRequest,
+                            hearders: hearders
+                        }); 
+
+                        log.debug(proceso,'request: '+JSON.stringify(request));
+
+                        if (!isEmpty(request))
+                        {
+                            if (request.code == 200)
+                            {
+                                try
+                                {
+                                    let body = JSON.parse(request.body);
+
+                                    log.debug(proceso,'body: '+JSON.stringify(body));
+
+                                    let idInternoPedido = parseInt(body.results[0].external_reference);
+
+                                    if (!isEmpty(idInternoPedido))
+                                    {
+                                        let newRecord = record.load({
+                                            type: 'customrecord_ptly_mp_notific',
+                                            id: data.idNS
+                                        });
+
+                                        if (!isEmpty(newRecord))
+                                        {
+                                            /*newRecord.setValue({
+                                                fieldId: 'custrecord_ptly_mp_notific_so',
+                                                value: idInternoPedido
+                                            });*/
+
+                                            newRecord.setValue({
+                                                fieldId: 'custrecord_ptly_mp_notific_det_mp',
+                                                value: body
                                             });
 
-                                            creditAmount = 0.00;
-                                        
-                                            log.debug(proceso,`Apply Transaction ID:  ${docNumber} marcado - amountApplyJournal: ${journalAmount}`);
+                                            let idRecord =  newRecord.save();
+        
+                                            log.debug(proceso, 'ID Registro: '+idRecord);
+                
+                                            if(!isEmpty(idRecord))
+                                            {
+                                                let obj = {};
+                                                obj.idMongo = data.idMongo;
+                                                obj.idNS = data.idNS;
+
+                                                respuesta = {
+                                                    error: false,
+                                                    key: context.key,
+                                                    messages: [],
+                                                    detalle_error: '',
+                                                    data: obj
+                                                };
+                                                
+                                                log.debug(proceso, 'respuesta: '+JSON.stringify(respuesta));
+                                            }
                                         }
-                                    });
+                                    }
+                                }
+                                catch(e)
+                                {
+                                    log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
                                 }
                             }
-                            log.debug(proceso,`Reduce - LINE 424 - registro: ${JSON.stringify(newRecord)}`);
-            
-                            if (existeAsiento)
-                            {
-                                var idnewrecord =  newRecord.save();
-                                log.audit(proceso,`PagoID Generado:  ${idnewrecord}`);
-                            }
-                            else
-                            {
-                                var mensaje = `No existen asientos disponibles con el monto correcto para aplicar a la transaccion con ID: ${registro.idPayment} y numero de localizado: ${registro.nroLocalizado}`;
-                                respuesta.error = true;
-                                respuesta.detalle_error = mensaje;
-                                log.error(proceso,mensaje);    
-                            }
-                        }
-                        else
-                        {
-                            var mensaje = `No existen transacciones disponibles disponibles en la sublista secundaria ${sublist}`;
-                            respuesta.error = true;
-                            respuesta.detalle_error = mensaje;
-                            log.error(proceso,mensaje);
                         }
                     }
-                    else
+                    catch(e)
                     {
-                        var mensaje = `No se generó la transacción dado que no se encontró la transacción en la sublista primaria ${sublist} de la transacción`;
-                        respuesta.error = true;
-                        respuesta.detalle_error = mensaje;
-                        log.error(proceso, mensaje);
+                        log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
                     }
                 }
-            
             }
-
-            
         } catch (e) {
             respuesta.error = true;
             mensaje = 'Excepcion Inesperada - Mensaje: ' + JSON.stringify(e.message);
@@ -395,31 +277,24 @@ function (record, search, https, runtime) {
     }
 
     function summarize(summary) {
+
+        const proceso = "PTLY - MercadoPago Notifications Process - Summarize";
+
         try {
 
-            var totalReduceErrors = 0;
-            var arrayReduceResults = [];
-            var messages = '';
+            let totalReduceErrors = 0;
+            let arrayReduceResults = [];
+            let messages = '';
 
             log.debug(proceso, 'Inicio - Summarize');
 
             summary.output.iterator().each(function (key, value) {
 
-                var objResp = JSON.parse(value);
+                let objResp = JSON.parse(value);
 
                 log.debug(proceso, 'objResp: ' + JSON.stringify(objResp));
 
-                if (objResp.error == true) {
-                    totalReduceErrors++;
-                    log.error(proceso, `SUMMARIZE - Transaccion NO procesada ${objResp.idTransaccion}`);
-                }else{
-                    log.debug(proceso, `SUMMARIZE - Transaccion procesada exitosamente ${objResp.idTransaccion}`);
-                }
-                arrayReduceResults.push(objResp);
-                return true;
             });
-
-            log.audit(proceso,'SUMMARIZE - Total errores en procesamiento: ' + totalReduceErrors);
 
             log.debug(proceso, 'Fin - Summarize');
 
@@ -459,8 +334,8 @@ function (record, search, https, runtime) {
 
     return {
         getInputData: getInputData,
-        map: map/*,
+        map: map,
         reduce: reduce,
-        summarize: summarize*/
+        summarize: summarize
     }
 });
