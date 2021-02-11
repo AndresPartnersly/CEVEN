@@ -40,67 +40,30 @@ function (record, search, https, runtime) {
 
                 try
                 {
-                    let hearders = {
-                        name: 'Content-Type',
-                        value: 'application/json'
-                    }
+                    let urlGetNotifications = 'https://checkoutsbx.herokuapp.com/getNotifications';
 
-                    let request = https.get({
-                        url: 'https://checkoutsbx.herokuapp.com/getNotifications',
-                        hearders: hearders
-                    }); 
+                    let resp = getNotificationsMP(urlGetNotifications);
 
-                    log.debug(proceso,'request: '+JSON.stringify(request));
+                    log.debug(proceso,'LINE 47 - resp: '+JSON.stringify(resp));
 
-                    if (!isEmpty(request))
+                    if (!isEmpty(resp.request) && !resp.error)
                     {
-                        if (request.code == 200)
+                        if (resp.request.code == 200)
                         {
-                            let body = JSON.parse(request.body);
+                            let body = JSON.parse(resp.request.body);
 
-                            log.debug(proceso,'body: '+JSON.stringify(body));
+                            log.debug(proceso,'LINE 55 - body: '+JSON.stringify(body));
         
                             for (let i=0; i < body.notifications.length; i++)
                             {
                                 try
                                 {
-                                    let obj = {};
-
-                                    let newRecord = record.create({
-                                        type: 'customrecord_ptly_mp_notific'
-                                    });
+                                    let resp = createNSNotificationMP(body.notifications[i], dataParams);
+                                    log.debug(proceso, 'LINE 62 - resp: '+JSON.stringify(resp));
         
-                                    newRecord.setValue({
-                                        fieldId: 'externalid',
-                                        value: body.notifications[i]._id
-                                    });
-        
-                                    newRecord.setValue({
-                                        fieldId: 'custrecord_ptly_mp_notific_type',
-                                        value: body.notifications[i].type
-                                    });
-        
-                                    newRecord.setValue({
-                                        fieldId: 'custrecord_ptly_mp_notific_id',
-                                        value: body.notifications[i].id
-                                    });
-        
-                                    newRecord.setValue({
-                                        fieldId: 'custrecord_ptly_mp_notific_sub',
-                                        value: dataParams.subsidiary
-                                    });
-        
-                                    let idRecord =  newRecord.save();
-        
-                                    log.debug(proceso, 'ID Registro: '+idRecord);
-        
-                                    if(!isEmpty(idRecord))
+                                    if(!isEmpty(resp) && !resp.error)
                                     {
-                                        obj.idMongo = body.notifications[i]._id;
-                                        obj.idNS = idRecord;
-                                        obj.type = body.notifications[i].type;
-                                        obj.id = body.notifications[i].id;
-                                        dataProcesar.push(obj);
+                                        dataProcesar.push(resp.obj);
                                     }
                                 }
                                 catch(e)
@@ -116,7 +79,7 @@ function (record, search, https, runtime) {
                     log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
                 }
 
-                log.debug(proceso, 'dataProcesar: '+JSON.stringify(dataProcesar));
+                log.debug(proceso, 'LINE 82 - dataProcesar: '+JSON.stringify(dataProcesar));
 
                 return dataProcesar;
 
@@ -138,20 +101,24 @@ function (record, search, https, runtime) {
 
         try
         {
-            let resultado = JSON.parse(context.value);
-            log.debug(proceso, 'Map - LINE 135 - resultado: '+JSON.stringify(resultado));
+            let result = JSON.parse(context.value);
+            let urlSearchPayment = `https://api.mercadopago.com/v1/payments/search?id=`;
+            log.debug(proceso, 'Map - LINE 106 - result: '+JSON.stringify(result));
 
-            if (!isEmpty(resultado))
+            if (!isEmpty(result))
             {
-                let obj = {};
-                obj.idMongo = resultado.idMongo;
-                obj.idNS = resultado.idNS;
-                obj.type = resultado.type;
-                obj.id = resultado.id;
-                obj.urlMPSearchPayment = `https://api.mercadopago.com/v1/payments/search?id=${resultado.id}`;
-                log.debug(proceso, 'Map - LINE 148 - obj: '+JSON.stringify(obj));
-                let key = obj.idMongo;
-                context.write(key, JSON.stringify(obj));
+                let resp = procesarRegMap(result, urlSearchPayment);
+                /*obj.idMongo = result.idMongo;
+                obj.idNS = result.idNS;
+                obj.type = result.type;
+                obj.id = result.id;
+                obj.urlMPSearchPayment = `https://api.mercadopago.com/v1/payments/search?id=${result.id}`;*/
+                if (!isEmpty(resp) && !resp.error)
+                {
+                    log.debug(proceso, 'Map - LINE 118 - resp: '+JSON.stringify(resp));
+                    let key = resp.obj.idMongo;
+                    context.write(key, JSON.stringify(resp.obj));
+                }
             }
 
         } catch (e) {
@@ -166,7 +133,7 @@ function (record, search, https, runtime) {
 
         log.audit(proceso, 'Reduce - INICIO');
 
-        let respuesta = { error: false, key: context.key, messages: [], detalle_error: '', data: {} };
+        let respuesta = { error: false, message:'', key: context.key, data: {} };
         let mensaje = "";
 
         try
@@ -179,72 +146,41 @@ function (record, search, https, runtime) {
                 {
                     let data = JSON.parse(context.values[k]);
                     let urlRequest = data.urlMPSearchPayment;
-                    log.debug(proceso, 'Reduce - LINE 182 - urlRequest : ' + urlRequest);
+                    log.debug(proceso, 'Reduce - LINE 149 - urlRequest : ' + urlRequest);
                     
                     try
                     {
-                        let hearders = {
-                            name: 'Authorization',
-                            value: 'Bearer TEST-232057640758695-012821-b8a871d3c1152919e6962c9db6dca556-281377671'
-                        }
-    
-                        let request = https.get({
-                            url: urlRequest,
-                            hearders: hearders
-                        }); 
+                        let resp = searchPaymentMP(urlRequest);
 
-                        log.debug(proceso,'request: '+JSON.stringify(request));
+                        log.debug(proceso,'LINE 155 - resp: '+JSON.stringify(resp));
 
-                        if (!isEmpty(request))
+                        if (!isEmpty(resp.request))
                         {
-                            if (request.code == 200)
+                            if (resp.request.code == 200)
                             {
                                 try
                                 {
-                                    let body = JSON.parse(request.body);
+                                    let body = JSON.parse(resp.request.body);
 
-                                    log.debug(proceso,'body: '+JSON.stringify(body));
+                                    log.debug(proceso,'LINE 165 - body: '+JSON.stringify(body));
 
                                     let idInternoPedido = parseInt(body.results[0].external_reference);
 
                                     if (!isEmpty(idInternoPedido))
                                     {
-                                        let newRecord = record.load({
-                                            type: 'customrecord_ptly_mp_notific',
-                                            id: data.idNS
-                                        });
-
-                                        if (!isEmpty(newRecord))
-                                        {
-                                            /*newRecord.setValue({
-                                                fieldId: 'custrecord_ptly_mp_notific_so',
-                                                value: idInternoPedido
-                                            });*/
-
-                                            newRecord.setValue({
-                                                fieldId: 'custrecord_ptly_mp_notific_det_mp',
-                                                value: body
-                                            });
-
-                                            let idRecord =  newRecord.save();
+                                        let resp = updNSNotificationMP(data.idNS, body, idInternoPedido);
         
-                                            log.debug(proceso, 'ID Registro: '+idRecord);
-                
-                                            if(!isEmpty(idRecord))
+                                        log.debug(proceso, 'LINE 173 - resp: '+JSON.stringify(resp));
+
+                                        if (!isEmpty(resp) && !resp.error)
+                                        {
+                                            if(!isEmpty(resp.idRecord))
                                             {
                                                 let obj = {};
                                                 obj.idMongo = data.idMongo;
                                                 obj.idNS = data.idNS;
-
-                                                respuesta = {
-                                                    error: false,
-                                                    key: context.key,
-                                                    messages: [],
-                                                    detalle_error: '',
-                                                    data: obj
-                                                };
-                                                
-                                                log.debug(proceso, 'respuesta: '+JSON.stringify(respuesta));
+                                                respuesta.obj = obj;
+                                                log.debug(proceso, 'LINE 191 - respuesta: '+JSON.stringify(respuesta));
                                             }
                                         }
                                     }
@@ -269,7 +205,7 @@ function (record, search, https, runtime) {
             log.error('Reduce error - ', mensaje);
         }
 
-        log.debug("Respuesta: ", JSON.stringify(respuesta));
+        log.debug("LINE 216 - Respuesta: ", JSON.stringify(respuesta));
 
         context.write(context.key, respuesta);
 
@@ -282,14 +218,10 @@ function (record, search, https, runtime) {
 
         try {
 
-            let totalReduceErrors = 0;
-            let arrayReduceResults = [];
-            let messages = '';
+            log.debug(proceso, 'LINE 223 - Inicio - Summarize');
 
-            log.debug(proceso, 'Inicio - Summarize');
-
-            summary.output.iterator().each(function (key, value) {
-
+            summary.output.iterator().each(function (key, value)
+            {
                 let objResp = JSON.parse(value);
 
                 log.debug(proceso, 'objResp: ' + JSON.stringify(objResp));
@@ -303,7 +235,7 @@ function (record, search, https, runtime) {
         }
     }
 
-    function isEmpty(value) {
+    let isEmpty = (value) => {
         if (value === '')
         {
             return true;
@@ -332,10 +264,204 @@ function (record, search, https, runtime) {
         return false;
     }
 
+    let createNSNotificationMP = (body, dataParams) => {
+
+        let resp = { error: false, message: ``, obj: {}}
+        const proceso = "PTLY - MercadoPago Notifications Process - createNSNotificationMP";
+
+        try
+        {
+            let obj = {};
+
+            let newRecord = record.create({
+                type: 'customrecord_ptly_mp_notific'
+            });
+
+            newRecord.setValue({
+                fieldId: 'externalid',
+                value: body._id
+            });
+
+            newRecord.setValue({
+                fieldId: 'custrecord_ptly_mp_notific_type',
+                value: body.type
+            });
+
+            newRecord.setValue({
+                fieldId: 'custrecord_ptly_mp_notific_id',
+                value: body.id
+            });
+
+            newRecord.setValue({
+                fieldId: 'custrecord_ptly_mp_notific_sub',
+                value: dataParams.subsidiary
+            });
+
+            let idRecord =  newRecord.save();
+
+            log.debug(proceso, 'ID Registro: '+idRecord);
+
+            if(!isEmpty(idRecord))
+            {
+                obj.idMongo = body._id;
+                obj.idNS = idRecord;
+                obj.type = body.type;
+                obj.id = body.id;
+                resp.obj = obj;
+                return resp;
+            }
+        }
+        catch(e)
+        {
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            resp.error = true;
+            resp.message = `Excepción: ${JSON.stringify(e.message)}`;
+            return resp;
+        }
+    }
+
+    let updNSNotificationMP = (idNS, body, idPedido) => {
+
+        let resp = { error: false, message: ``, idRecord: null}
+        const proceso = "PTLY - MercadoPago Notifications Process - updNSNotificationMP";
+        log.debug('LINE 339 - body.toString(): '+body);
+        try
+        {
+            let newRecord = record.load({
+                type: 'customrecord_ptly_mp_notific',
+                id: idNS
+            });
+
+            if (!isEmpty(newRecord))
+            {
+                /*newRecord.setValue({
+                    fieldId: 'custrecord_ptly_mp_notific_so',
+                    value: idPedido
+                });*/
+
+                newRecord.setValue({
+                    fieldId: 'custrecord_ptly_mp_notific_det_mp',
+                    value: JSON.stringify(body)
+                });
+
+                let idRecord =  newRecord.save();
+
+                log.debug(proceso, 'Registro actualizado ID: '+idRecord);
+
+                if(!isEmpty(idRecord))
+                    resp.idRecord = idRecord;
+                
+                return resp;
+            }
+        }
+        catch(e)
+        {
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            resp.error = true;
+            resp.message = `Excepción: ${JSON.stringify(e.message)}`;
+            return resp;
+        }
+    }
+
+    let procesarRegMap = (objMap, urlSearchPayment) => {
+
+        let resp = { error: false, message: ``, obj: {}}
+        const proceso = "PTLY - MercadoPago Notifications Process - procesarRegMap";
+
+        try
+        {
+            let obj = {};
+            obj.idMongo = objMap.idMongo;
+            obj.idNS = objMap.idNS;
+            obj.type = objMap.type;
+            obj.id = objMap.id;
+            obj.urlMPSearchPayment = `${urlSearchPayment}${objMap.id}`;
+            resp.obj = obj;
+
+            return resp;
+        }
+        catch(e)
+        {
+            log.error(proceso, `procesarRegMap - Excepción: ${JSON.stringify(e.message)}`);
+            resp.error = true;
+            resp.message = `procesarRegMap - Excepción: ${JSON.stringify(e.message)}`;
+            return resp;
+        }
+    }
+
+    let getNotificationsMP = (urlGetNotifications) => {
+
+        let resp = { error: false, message: ``, request: null}
+        const proceso = "PTLY - MercadoPago Notifications Process - getNotificationsMP";
+
+        try
+        {
+            let headers = {
+                name: 'Content-Type',
+                value: 'application/json'
+            }
+
+            let request = https.get({
+                url: urlGetNotifications,
+                headers: headers
+            }); 
+
+            resp.request = request;
+
+            log.debug(proceso,'request: '+JSON.stringify(request));
+
+            return resp;
+
+        }
+        catch(e)
+        {
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            resp.error = true;
+            resp.message = `Excepción: ${JSON.stringify(e.message)}`;
+            return resp;
+        }
+    }
+
+    let searchPaymentMP = (urlSearchPayment) => {
+
+        let resp = { error: false, message: ``, request: null}
+        const proceso = "PTLY - MercadoPago Notifications Process - searchPaymentMP";
+
+        try
+        {
+            let headers = {
+                'Authorization': 'Bearer TEST-232057640758695-012821-b8a871d3c1152919e6962c9db6dca556-281377671',
+                'Content-Type':'application/json',
+                'Accept':'*/*'
+            }
+
+            let request = https.get({
+                url: urlSearchPayment,
+                headers: headers
+            }); 
+
+            log.debug(proceso,'request: '+JSON.stringify(request));
+
+            resp.request = request;
+
+            log.debug(proceso,'request: '+JSON.stringify(request));
+
+            return resp;
+
+        }
+        catch(e)
+        {
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            resp.error = true;
+            resp.message = `Excepción: ${JSON.stringify(e.message)}`;
+            return resp;
+        }
+    }
+
     return {
         getInputData: getInputData,
         map: map,
         reduce: reduce,
-        summarize: summarize
+        //summarize: summarize
     }
 });
