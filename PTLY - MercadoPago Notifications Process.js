@@ -218,13 +218,13 @@ function (record, search, https, runtime) {
 
         try {
 
-            log.debug(proceso, 'LINE 223 - Inicio - Summarize');
+            log.debug(proceso, 'LINE 223 - Inicio - Summarize - summary: '+JSON.stringify(summary));
 
             summary.output.iterator().each(function (key, value)
             {
                 let objResp = JSON.parse(value);
 
-                log.debug(proceso, 'objResp: ' + JSON.stringify(objResp));
+                log.debug(proceso, 'objResp: ' + JSON.stringify(objResp)+' - key: '+key);
 
             });
 
@@ -324,7 +324,7 @@ function (record, search, https, runtime) {
 
         let resp = { error: false, message: ``, idRecord: null}
         const proceso = "PTLY - MercadoPago Notifications Process - updNSNotificationMP";
-        log.debug('LINE 339 - body.toString(): '+body);
+
         try
         {
             let newRecord = record.load({
@@ -462,6 +462,6 @@ function (record, search, https, runtime) {
         getInputData: getInputData,
         map: map,
         reduce: reduce,
-        //summarize: summarize
+        summarize: summarize
     }
 });
