@@ -138,7 +138,7 @@ function (record, search, https, runtime) {
 
         try
         {
-            log.debug(proceso, 'Reduce - LINE 174 - context : ' + context);
+            log.debug(proceso, 'Reduce - LINE 174 - context.key : ' + context.key);
 
             if (!isEmpty(context.values) && context.values.length > 0)
             {
@@ -179,14 +179,17 @@ function (record, search, https, runtime) {
                                                 let obj = {};
                                                 obj.idMongo = data.idMongo;
                                                 obj.idNS = data.idNS;
-                                                respuesta.obj = obj;
+                                                respuesta.data = obj;
                                                 log.debug(proceso, 'LINE 191 - respuesta: '+JSON.stringify(respuesta));
+                                                context.write(context.key, respuesta);
                                             }
                                         }
                                     }
                                 }
                                 catch(e)
                                 {
+                                    respuesta.error = true;
+                                    respuesta.message = `Excepción: ${JSON.stringify(e.message)}`; 
                                     log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
                                 }
                             }
@@ -204,17 +207,13 @@ function (record, search, https, runtime) {
             respuesta.detalle_error = mensaje;
             log.error('Reduce error - ', mensaje);
         }
-
-        log.debug("LINE 216 - Respuesta: ", JSON.stringify(respuesta));
-
-        context.write(context.key, respuesta);
-
         log.audit(proceso, 'Reduce - FIN');
     }
 
     function summarize(summary) {
 
         const proceso = "PTLY - MercadoPago Notifications Process - Summarize";
+        dataProcesar = [];
 
         try {
 
@@ -223,10 +222,22 @@ function (record, search, https, runtime) {
             summary.output.iterator().each(function (key, value)
             {
                 let objResp = JSON.parse(value);
-
-                log.debug(proceso, 'objResp: ' + JSON.stringify(objResp)+' - key: '+key);
-
+                if (!isEmpty(objResp))
+                {
+                    dataProcesar.push(objResp);
+                }  
+                return true;
             });
+
+            log.debug('LINE 232 - dataProcesar: '+JSON.stringify(dataProcesar));
+
+            if (dataProcesar.length > 0)
+            {
+                for (let i=0; i<dataProcesar.length; i++)
+                {
+
+                }
+            }
 
             log.debug(proceso, 'Fin - Summarize');
 
@@ -403,6 +414,39 @@ function (record, search, https, runtime) {
 
             let request = https.get({
                 url: urlGetNotifications,
+                headers: headers
+            }); 
+
+            resp.request = request;
+
+            log.debug(proceso,'request: '+JSON.stringify(request));
+
+            return resp;
+
+        }
+        catch(e)
+        {
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            resp.error = true;
+            resp.message = `Excepción: ${JSON.stringify(e.message)}`;
+            return resp;
+        }
+    }
+
+    let updNotificationsMPColletion = (urlupdNotifications) => {
+
+        let resp = { error: false, message: ``, request: null}
+        const proceso = "PTLY - MercadoPago Notifications Process - updNotificationsMPColletion";
+
+        try
+        {
+            let headers = {
+                name: 'Content-Type',
+                value: 'application/json'
+            }
+
+            let request = https.get({
+                url: urlupdNotifications,
                 headers: headers
             }); 
 
