@@ -138,7 +138,7 @@ function (record, search, https, runtime) {
 
         try
         {
-            log.debug(proceso, 'Reduce - LINE 174 - context.key : ' + context.key);
+            log.debug(proceso, 'Reduce - LINE 141 - context.key : ' + context.key);
 
             if (!isEmpty(context.values) && context.values.length > 0)
             {
@@ -217,7 +217,9 @@ function (record, search, https, runtime) {
 
         try {
 
-            log.debug(proceso, 'LINE 223 - Inicio - Summarize - summary: '+JSON.stringify(summary));
+            let urlRequest = 'https://checkoutsbx.herokuapp.com/updNotifications';
+
+            log.debug(proceso, 'LINE 222 - Inicio - Summarize - summary: '+JSON.stringify(summary));
 
             summary.output.iterator().each(function (key, value)
             {
@@ -229,13 +231,26 @@ function (record, search, https, runtime) {
                 return true;
             });
 
-            log.debug('LINE 232 - dataProcesar: '+JSON.stringify(dataProcesar));
+            log.debug('LINE 234','dataProcesar: '+JSON.stringify(dataProcesar));
 
             if (dataProcesar.length > 0)
             {
-                for (let i=0; i<dataProcesar.length; i++)
+                for (let i=0; i < dataProcesar.length; i++)
                 {
+                    log.debug('LINE 240',`dataProcesar[${i}].data.idMongo: ${dataProcesar[i].data.idMongo}`);
+                    let body = {
+                        idPayment: dataProcesar[i].data.idMongo
+                    }
 
+                    let resp = updNotificationsMPColletion(urlRequest, body);
+
+                    if (!isEmpty(resp) && !resp.error)
+                    {
+                        if (resp.request.code == 201)
+                        {
+                            log.debug('LINE 251','Documento actualizado en MongoDB');
+                        }
+                    }
                 }
             }
 
@@ -345,10 +360,10 @@ function (record, search, https, runtime) {
 
             if (!isEmpty(newRecord))
             {
-                /*newRecord.setValue({
+                newRecord.setValue({
                     fieldId: 'custrecord_ptly_mp_notific_so',
                     value: idPedido
-                });*/
+                });
 
                 newRecord.setValue({
                     fieldId: 'custrecord_ptly_mp_notific_det_mp',
@@ -433,7 +448,7 @@ function (record, search, https, runtime) {
         }
     }
 
-    let updNotificationsMPColletion = (urlupdNotifications) => {
+    let updNotificationsMPColletion = (urlupdNotifications, body) => {
 
         let resp = { error: false, message: ``, request: null}
         const proceso = "PTLY - MercadoPago Notifications Process - updNotificationsMPColletion";
@@ -445,9 +460,10 @@ function (record, search, https, runtime) {
                 value: 'application/json'
             }
 
-            let request = https.get({
+            let request = https.post({
                 url: urlupdNotifications,
-                headers: headers
+                headers: headers,
+                body: body
             }); 
 
             resp.request = request;
