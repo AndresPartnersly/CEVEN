@@ -12,7 +12,8 @@ function (record, search, https, runtime) {
         
         let body = { error: false, mensaje:'', contextocrear:'', contextomodificar:'' };
         
-        try {
+        try
+        {
             let currScript = runtime.getCurrentScript();
             body.subsidiary = currScript.getParameter('custscript_ptly_notif_process_sub');
         } catch (e) {
@@ -30,63 +31,81 @@ function (record, search, https, runtime) {
 
         log.audit(proceso, 'GetInputData - INICIO');
 
-        try{
+        try
+        {
             //Se obtienen los parametros del script
             let dataParams = getParams();
 
             log.debug(proceso, "getParams RESPONSE: " + JSON.stringify(dataParams));
 
-            if(!dataParams.error){
-
-                try
+            if(!isEmpty(dataParams))
+            {
+                if(!dataParams.error)
                 {
-                    let urlGetNotifications = 'https://checkoutsbx.herokuapp.com/getNotifications';
-
-                    let resp = getNotificationsMP(urlGetNotifications);
-
-                    log.debug(proceso,'LINE 47 - resp: '+JSON.stringify(resp));
-
-                    if (!isEmpty(resp.request) && !resp.error)
+                    let accountId = runtime.accountId;
+                    log.debug(proceso, "LINE 46: " + accountId);
+                    let config = getConfiguration(dataParams.subsidiary, accountId);
+                    log.debug(proceso, "LINE 48 - config: " + JSON.stringify(config));
+                    if (config.existeConfig)
                     {
-                        if (resp.request.code == 200)
+                        try
                         {
-                            let body = JSON.parse(resp.request.body);
+                            let resp = getNotificationsMP(config);
 
-                            log.debug(proceso,'LINE 55 - body: '+JSON.stringify(body));
-        
-                            for (let i=0; i < body.notifications.length; i++)
+                            log.debug(proceso,'LINE 55 - resp: '+JSON.stringify(resp));
+
+                            if (!isEmpty(resp.request) && !resp.error)
                             {
-                                try
+                                if (resp.request.code == 200)
                                 {
-                                    let resp = createNSNotificationMP(body.notifications[i], dataParams);
-                                    log.debug(proceso, 'LINE 62 - resp: '+JSON.stringify(resp));
-        
-                                    if(!isEmpty(resp) && !resp.error)
+                                    let body = JSON.parse(resp.request.body);
+
+                                    log.debug(proceso,'LINE 63 - body: '+JSON.stringify(body));
+                
+                                    for (let i=0; i < body.notifications.length; i++)
                                     {
-                                        dataProcesar.push(resp.obj);
-                                    }
+                                        try
+                                        {
+                                            let resp = createNSNotificationMP(body.notifications[i], dataParams, config);
+                                            log.debug(proceso, 'LINE 70 - resp: '+JSON.stringify(resp));
+                
+                                            if(!isEmpty(resp) && !resp.error)
+                                            {
+                                                dataProcesar.push(resp.obj);
+                                            }
+                                        }
+                                        catch(e)
+                                        {
+                                            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+                                        }
+                                    } 
                                 }
-                                catch(e)
-                                {
-                                    log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
-                                }
-                            } 
+                            }
+                        }
+                        catch(e)
+                        {
+                            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
                         }
                     }
+                    else
+                    {
+                        log.error(proceso, `No existe configuración para la subsidiaria y ambiente actual`);        
+                    }
                 }
-                catch(e)
+                else
                 {
-                    log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+                    log.error(proceso, JSON.stringify(dataParams.mensaje));
                 }
-
-                log.debug(proceso, 'LINE 82 - dataProcesar: '+JSON.stringify(dataProcesar));
-
-                return dataProcesar;
-
-            }else{
-                log.error(proceso, JSON.stringify(dataParams.mensaje));
             }
-        }catch(err) {
+            else
+            {
+                log.error(proceso, `No se pudo obtener información de los parametros del script`);
+            }
+
+            return dataProcesar;
+        }
+        catch(err)
+        {
             log.error(proceso, `Excepción: ${JSON.stringify(err)}`);
             return null;
         }
@@ -102,20 +121,14 @@ function (record, search, https, runtime) {
         try
         {
             let result = JSON.parse(context.value);
-            let urlSearchPayment = `https://api.mercadopago.com/v1/payments/search?id=`;
-            log.debug(proceso, 'Map - LINE 106 - result: '+JSON.stringify(result));
+            log.debug(proceso, 'Map - LINE 124 - result: '+JSON.stringify(result));
 
             if (!isEmpty(result))
             {
-                let resp = procesarRegMap(result, urlSearchPayment);
-                /*obj.idMongo = result.idMongo;
-                obj.idNS = result.idNS;
-                obj.type = result.type;
-                obj.id = result.id;
-                obj.urlMPSearchPayment = `https://api.mercadopago.com/v1/payments/search?id=${result.id}`;*/
+                let resp = procesarRegMap(result);
                 if (!isEmpty(resp) && !resp.error)
                 {
-                    log.debug(proceso, 'Map - LINE 118 - resp: '+JSON.stringify(resp));
+                    log.debug(proceso, 'Map - LINE 131 - resp: '+JSON.stringify(resp));
                     let key = resp.obj.idMongo;
                     context.write(key, JSON.stringify(resp.obj));
                 }
@@ -138,21 +151,19 @@ function (record, search, https, runtime) {
 
         try
         {
-            log.debug(proceso, 'Reduce - LINE 141 - context.key : ' + context.key);
+            log.debug(proceso, 'Reduce - LINE 154 - context.key : ' + context.key);
 
             if (!isEmpty(context.values) && context.values.length > 0)
             {
                 for (let k = 0; k < context.values.length; k++)
                 {
                     let data = JSON.parse(context.values[k]);
-                    let urlRequest = data.urlMPSearchPayment;
-                    log.debug(proceso, 'Reduce - LINE 149 - urlRequest : ' + urlRequest);
-                    
+                   
                     try
                     {
-                        let resp = searchPaymentMP(urlRequest);
+                        let resp = searchPaymentMP(data.config);
 
-                        log.debug(proceso,'LINE 155 - resp: '+JSON.stringify(resp));
+                        log.debug(proceso,'LINE 166 - resp: '+JSON.stringify(resp));
 
                         if (!isEmpty(resp.request))
                         {
@@ -179,6 +190,7 @@ function (record, search, https, runtime) {
                                                 let obj = {};
                                                 obj.idMongo = data.idMongo;
                                                 obj.idNS = data.idNS;
+                                                obj.config = data.config;
                                                 respuesta.data = obj;
                                                 log.debug(proceso, 'LINE 191 - respuesta: '+JSON.stringify(respuesta));
                                                 context.write(context.key, respuesta);
@@ -217,8 +229,6 @@ function (record, search, https, runtime) {
 
         try {
 
-            let urlRequest = 'https://checkoutsbx.herokuapp.com/updNotifications';
-
             log.debug(proceso, 'LINE 222 - Inicio - Summarize - summary: '+JSON.stringify(summary));
 
             summary.output.iterator().each(function (key, value)
@@ -242,7 +252,7 @@ function (record, search, https, runtime) {
                         idPayment: dataProcesar[i].data.idMongo
                     }
 
-                    let resp = updNotificationsMPColletion(urlRequest, body);
+                    let resp = updNotificationsMPColletion(dataProcesar[i].data.config, body);
 
                     if (!isEmpty(resp) && !resp.error)
                     {
@@ -290,7 +300,7 @@ function (record, search, https, runtime) {
         return false;
     }
 
-    let createNSNotificationMP = (body, dataParams) => {
+    let createNSNotificationMP = (body, dataParams, config) => {
 
         let resp = { error: false, message: ``, obj: {}}
         const proceso = "PTLY - MercadoPago Notifications Process - createNSNotificationMP";
@@ -333,6 +343,7 @@ function (record, search, https, runtime) {
                 obj.idNS = idRecord;
                 obj.type = body.type;
                 obj.id = body.id;
+                obj.config = config;
                 resp.obj = obj;
                 return resp;
             }
@@ -401,7 +412,7 @@ function (record, search, https, runtime) {
             obj.idNS = objMap.idNS;
             obj.type = objMap.type;
             obj.id = objMap.id;
-            obj.urlMPSearchPayment = `${urlSearchPayment}${objMap.id}`;
+            obj.urlMPSearchPayment = `${objMap.config.servBuscarPago}?id=${objMap.id}`;
             resp.obj = obj;
 
             return resp;
@@ -415,28 +426,37 @@ function (record, search, https, runtime) {
         }
     }
 
-    let getNotificationsMP = (urlGetNotifications) => {
+    let getNotificationsMP = (config) => {
 
         let resp = { error: false, message: ``, request: null}
         const proceso = "PTLY - MercadoPago Notifications Process - getNotificationsMP";
 
         try
         {
-            let headers = {
-                name: 'Content-Type',
-                value: 'application/json'
+            let token = getToken(config);
+
+            if (!isEmpty(token))
+            {
+                let headers = {
+                    'Content-Type':'application/json',
+                    'x-access-token':token
+                }
+
+                let request = https.get({
+                    url: config.servDescNotif,
+                    headers: headers
+                }); 
+
+                resp.request = request;
+
+                log.debug(proceso,'request: '+JSON.stringify(request));
+
+                return resp;
             }
-
-            let request = https.get({
-                url: urlGetNotifications,
-                headers: headers
-            }); 
-
-            resp.request = request;
-
-            log.debug(proceso,'request: '+JSON.stringify(request));
-
-            return resp;
+            else
+            {
+                return resp;
+            }
 
         }
         catch(e)
@@ -448,41 +468,49 @@ function (record, search, https, runtime) {
         }
     }
 
-    let updNotificationsMPColletion = (urlupdNotifications, body) => {
+    let updNotificationsMPColletion = (config, body) => {
 
         let resp = { error: false, message: ``, request: null}
         const proceso = "PTLY - MercadoPago Notifications Process - updNotificationsMPColletion";
 
-        try
-        {
-            let headers = {
-                name: 'Content-Type',
-                value: 'application/json'
+            try
+            {
+                let token = getToken(config);
+
+                if (!isEmpty(token))
+                {
+                    let headers = {
+                        'Content-Type':'application/json',
+                        'x-access-token':token
+                    }
+
+                    let request = https.post({
+                        url: config.servActNotif,
+                        headers: headers,
+                        body: body
+                    }); 
+
+                    resp.request = request;
+
+                    log.debug(proceso,'request: '+JSON.stringify(request));
+
+                    return resp;
+                }
+                else
+                {
+                    return resp;
+                }
             }
-
-            let request = https.post({
-                url: urlupdNotifications,
-                headers: headers,
-                body: body
-            }); 
-
-            resp.request = request;
-
-            log.debug(proceso,'request: '+JSON.stringify(request));
-
-            return resp;
-
-        }
-        catch(e)
-        {
-            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
-            resp.error = true;
-            resp.message = `Excepción: ${JSON.stringify(e.message)}`;
-            return resp;
-        }
+            catch(e)
+            {
+                log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+                resp.error = true;
+                resp.message = `Excepción: ${JSON.stringify(e.message)}`;
+                return resp;
+            }
     }
 
-    let searchPaymentMP = (urlSearchPayment) => {
+    let searchPaymentMP = (config) => {
 
         let resp = { error: false, message: ``, request: null}
         const proceso = "PTLY - MercadoPago Notifications Process - searchPaymentMP";
@@ -490,13 +518,13 @@ function (record, search, https, runtime) {
         try
         {
             let headers = {
-                'Authorization': 'Bearer TEST-232057640758695-012821-b8a871d3c1152919e6962c9db6dca556-281377671',
+                'Authorization': config.tokenMP,
                 'Content-Type':'application/json',
                 'Accept':'*/*'
             }
 
             let request = https.get({
-                url: urlSearchPayment,
+                url: config.servBuscarPago,
                 headers: headers
             }); 
 
@@ -515,6 +543,100 @@ function (record, search, https, runtime) {
             resp.error = true;
             resp.message = `Excepción: ${JSON.stringify(e.message)}`;
             return resp;
+        }
+    }
+
+
+    let getConfiguration = (subsidiaria, accountId) => {
+
+        let objeto = {};
+        objeto.existeConfig = false;
+
+        let ssConfig = search.load({
+            id: 'customsearch_ptly_mp_config'
+        })
+
+        let ssSubsidiariaFilter = search.createFilter({
+            name: 'custrecord_ptly_mp_config_sub',
+            operator: search.Operator.IS,
+            values: subsidiaria
+        });
+
+        let ssAccountFilter = search.createFilter({
+            name: 'custrecord_ptly_mp_config_ns_amb',
+            operator: search.Operator.IS,
+            values: accountId
+        });
+
+        ssConfig.filters.push(ssSubsidiariaFilter);
+        ssConfig.filters.push(ssAccountFilter);
+
+        let ssConfigRun = ssConfig.run();
+        let ssConfigRunRange = ssConfigRun.getRange({
+            start: 0,
+            end: 1000
+        }); 
+
+        for (let j = 0; j < ssConfigRunRange.length; j++)
+        {
+            objeto.subsidiaria = ssConfigRunRange[j].getValue(ssConfigRun.columns[0]);
+            objeto.ambienteNS = ssConfigRunRange[j].getValue(ssConfigRun.columns[1]);
+            objeto.tokenMP = ssConfigRunRange[j].getValue(ssConfigRun.columns[2]);
+            objeto.userMDW = ssConfigRunRange[j].getValue(ssConfigRun.columns[3]);
+            objeto.passMDW = ssConfigRunRange[j].getValue(ssConfigRun.columns[4]);
+            objeto.servActNotif = ssConfigRunRange[j].getValue(ssConfigRun.columns[5]);
+            objeto.servBuscarPago = ssConfigRunRange[j].getValue(ssConfigRun.columns[6]);
+            objeto.servCrearPrefer = ssConfigRunRange[j].getValue(ssConfigRun.columns[7]);
+            objeto.servDescNotif = ssConfigRunRange[j].getValue(ssConfigRun.columns[8]);
+            objeto.servGenToken = ssConfigRunRange[j].getValue(ssConfigRun.columns[9]);
+            objeto.servRecNotif = ssConfigRunRange[j].getValue(ssConfigRun.columns[10]);
+            objeto.existeConfig = true;
+        }
+
+        return objeto;
+    }
+
+
+    let getToken = (config) => {
+        
+        let token = ``;
+        const proceso = "PTLY - MercadoPago Notifications Process - getToken";
+
+        try
+        {
+            let headers = {
+                name: 'Content-Type',
+                value: 'application/json'
+            }
+
+            let body = {
+                id: config.userMDW,
+                pass: config.passMDW
+            }
+
+            let request = https.post({
+                url: config.servGenToken,
+                headers: headers,
+                body: body
+            }); 
+
+            log.debug(proceso,'request: '+JSON.stringify(request));
+
+            if (request.code == 200)
+            {
+                let body = JSON.parse(request.body);
+                token = body.token;
+                return token;
+            }
+            else
+            {
+                return token
+            }
+        }
+        catch(e)
+        {
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            return ``;
         }
     }
 
