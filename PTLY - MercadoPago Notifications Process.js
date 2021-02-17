@@ -4,9 +4,9 @@
  *@NScriptType MapReduceScript
  *@NModuleScope Public
  */
-define(['N/record', 'N/search', 'N/https', 'N/runtime'],
+define(['N/record', 'N/search', 'N/https', 'N/runtime', 'N/query'],
 
-function (record, search, https, runtime) {
+function (record, search, https, runtime, query) {
 
     function getParams() {
         
@@ -16,6 +16,7 @@ function (record, search, https, runtime) {
         {
             let currScript = runtime.getCurrentScript();
             body.subsidiary = currScript.getParameter('custscript_ptly_notif_process_sub');
+            body.idStatusApprovPayment = currScript.getParameter('custscript_ptly_notif_process_appr_stat');
         } catch (e) {
             body.error = true;
             body.mensaje = "Netsuite Error - Excepción: " + e.message;
@@ -178,19 +179,21 @@ function (record, search, https, runtime) {
                                     if (!isEmpty(idInternoPedido))
                                     {
                                         let resp = updNSNotificationMP(data.idNS, body, idInternoPedido);
+                                        let respSO = updSO(data, body, idInternoPedido);
         
-                                        log.debug(proceso, 'LINE 173 - resp: '+JSON.stringify(resp));
+                                        log.debug(proceso, 'LINE 183 - resp: '+JSON.stringify(resp));
+                                        log.debug(proceso, 'LINE 184 - respSO: '+JSON.stringify(respSO));
 
-                                        if (!isEmpty(resp) && !resp.error)
+                                        if (!isEmpty(resp) && !resp.error && !isEmpty(respSO) && respSO.soUpd)
                                         {
-                                            if(!isEmpty(resp.idRecord))
+                                            if(!isEmpty(resp.idRecord) && !isEmpty(respSO.idRecord))
                                             {
                                                 let obj = {};
                                                 obj.idMongo = data.idMongo;
                                                 obj.idNS = data.idNS;
                                                 obj.config = data.config;
                                                 respuesta.data = obj;
-                                                log.debug(proceso, 'LINE 191 - respuesta: '+JSON.stringify(respuesta));
+                                                log.debug(proceso, 'LINE 195 - respuesta: '+JSON.stringify(respuesta));
                                                 context.write(context.key, respuesta);
                                             }
                                         }
@@ -342,6 +345,7 @@ function (record, search, https, runtime) {
                 obj.type = body.type;
                 obj.id = body.id;
                 obj.config = config;
+                obj.params = dataParams;
                 resp.obj = obj;
                 return resp;
             }
@@ -403,7 +407,7 @@ function (record, search, https, runtime) {
     }
 
 
-    let updSO = (idNS, body, idPedido) => {
+    let updSO = (data, body, idPedido) => {
 
         let resp = { error: false, message: ``, idRecord: null, soUpd: false}
         const proceso = "PTLY - MercadoPago Notifications Process - updSO";
@@ -412,52 +416,73 @@ function (record, search, https, runtime) {
         {
             let soRecord = record.load({
                 type: record.Type.SALES_ORDER,
-                id: idPedido
+                id: idPedido,
+                isDynamic: true
             });
 
             if (!isEmpty(soRecord))
             {
+                let subsidiary = soRecord.getValue({ fieldId: 'subsidiary'});
+
                 //MONTO DEL PAGO
                 let total_paid_amount = parseFloat(body.results[0].transaction_details.total_paid_amount,10);
-                log.debug('LINE 422- total_paid_amount: '+total_paid_amount);
+                log.debug('LINE 422','total_paid_amount: '+total_paid_amount);
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_monto_total_pago',
                     value: total_paid_amount
                 });
 
                 //MONTO COMISION
-                let fee_amount = parseFloat(body.results[0].fee_details[0].amount,10);
-                log.debug('LINE 430- fee_amount: '+fee_amount);
+                let fee_amount = 0.00;
+                if (body.results[0].fee_details.length > 0)
+                {
+                    fee_amount = parseFloat(body.results[0].fee_details[0].amount,10);
+                }
+                log.debug('LINE 434','fee_amount: '+fee_amount);
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_monto_comision',
                     value: fee_amount
                 });
 
                 //MEDIO DE PAGO
-                let payment_method_id = getPaymentMethod(body.results[0].payment_method_id);
-                log.debug('LINE 438- payment_method_id: '+payment_method_id);
+                let payment_method_id = getPaymentMethod(body.results[0].payment_method_id, subsidiary);
+                let paymentmethod = payment_method_id[0].idpaymentmethod;
+                log.debug('LINE 442','- payment_method_id: '+JSON.stringify(payment_method_id));
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_medio_pago',
-                    value: payment_method_id
+                    value: payment_method_id[0].idraw
                 });
 
                 //ESTADO DEL PAGO
                 let status = getPaymentStatus(body.results[0].status);
-                log.debug('LINE 446- status: '+status);
+                log.debug('LINE 450','status: '+JSON.stringify(status));
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_estado_pago',
-                    value: status
+                    value: status[0].idraw
                 });
 
+                log.debug('LINE 463','data: '+JSON.stringify(data));
+                if (data.params.idStatusApprovPayment == status[0].idraw)
+                {
+                    log.debug('LINE 466','ENTRO - paymentmethod: '+paymentmethod);
+                    soRecord.setValue({
+                        fieldId: 'paymentmethod',
+                        value: paymentmethod
+                    });
+                }
+
                 //ID DEL PAGO
-                let idPayment = getPaymentStatus(body.results[0].id);
-                log.debug('LINE 454- idPayment: '+idPayment);
+                let idPayment = body.results[0].id;
+                log.debug('LINE 454','idPayment: '+JSON.stringify(idPayment));
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_id_pago',
                     value: idPayment
                 });
 
-                let idRecord =  soRecord.save();
+                let idRecord =  soRecord.save({
+                    enableSourcing: true,
+                    ignoreMandatoryFields: true
+                });
 
                 log.debug(proceso, 'SO actualizada ID: '+idRecord);
 
@@ -493,6 +518,7 @@ function (record, search, https, runtime) {
             obj.id = objMap.id;
             obj.urlMPSearchPayment = `${objMap.config.servBuscarPago}?id=${objMap.id}`;
             obj.config = objMap.config;
+            obj.params = objMap.params;
             resp.obj = obj;
 
             return resp;
@@ -556,20 +582,21 @@ function (record, search, https, runtime) {
             try
             {
                 let token = getToken(config);
-
+                log.debug(proceso,'LINE 585 - token: '+JSON.stringify(token));
                 if (!isEmpty(token))
                 {
                     let headers = {
                         'Content-Type':'application/json',
                         'x-access-token':token
                     }
-
+                    
+                    log.debug(proceso,'LINE 592 - headers: '+JSON.stringify(headers)+' - body: '+JSON.stringify(body)+' - url: '+config.servActNotif);
                     let request = https.post({
                         url: config.servActNotif,
                         headers: headers,
-                        body: body
+                        body: JSON.stringify(body)
                     }); 
-
+                    log.debug(proceso,'LINE 598 - request: '+JSON.stringify(request));
                     resp.request = request;
 
                     log.debug(proceso,'request: '+JSON.stringify(request));
@@ -628,6 +655,49 @@ function (record, search, https, runtime) {
             resp.message = `Excepción: ${JSON.stringify(e.message)}`;
             return resp;
         }
+    }
+
+    let getPaymentStatus = (status) => {
+
+        let arrResults = [];
+
+        let strSQL = "SELECT \n CUSTOMRECORD_PTLY_MP_ESTADO_PAGO.\"ID\" AS idRAW /*{id#RAW}*/, \n CUSTOMRECORD_PTLY_MP_ESTADO_PAGO.custrecord_ptly_mp_estado_pago_id AS custrecordptlympestadopag /*{custrecord_ptly_mp_estado_pago_id#RAW}*/, \n CUSTOMRECORD_PTLY_MP_ESTADO_PAGO.name AS nameRAW /*{name#RAW}*/\nFROM \n CUSTOMRECORD_PTLY_MP_ESTADO_PAGO\nWHERE \n CUSTOMRECORD_PTLY_MP_ESTADO_PAGO.custrecord_ptly_mp_estado_pago_id IN ('"+status+"')\n";
+    
+        let objPagedData = query.runSuiteQLPaged({
+            query: strSQL,
+            pageSize: 1
+        });
+       
+        objPagedData.pageRanges.forEach(function(pageRange) {
+            //fetch
+            let objPage = objPagedData.fetch({ index: pageRange.index }).data;
+            // Map results to columns 
+            arrResults.push.apply(arrResults, objPage.asMappedResults());
+        });
+    
+        return arrResults;
+    }
+
+
+    let getPaymentMethod = (payment_method_id, subsidiary) => {
+
+        let arrResults = [];
+
+        let strSQL = "SELECT \n CUSTOMRECORD_PTLY_MP_MEDIO_PAGO.\"ID\" AS idRAW /*{id#RAW}*/, \n CUSTOMRECORD_PTLY_MP_MEDIO_PAGO.custrecord_ptly_mp_medio_pago_id AS custrecordptlympmediopago /*{custrecord_ptly_mp_medio_pago_id#RAW}*/, \n CUSTOMRECORD_PTLY_MP_MEDIO_PAGO.name AS nameRAW /*{name#RAW}*/\n, \n CUSTOMRECORD_PTLY_MP_MEDIO_PAGO.custrecord_ptly_mp_medio_pago_paymeth_ns AS idPaymentMethod\nFROM \n CUSTOMRECORD_PTLY_MP_MEDIO_PAGO\nWHERE \n CUSTOMRECORD_PTLY_MP_MEDIO_PAGO.custrecord_ptly_mp_medio_pago_id IN ('"+ payment_method_id +"') \n AND CUSTOMRECORD_PTLY_MP_MEDIO_PAGO.custrecord_ptly_mp_medio_pago_sub="+ subsidiary +"\n";
+    
+        let objPagedData = query.runSuiteQLPaged({
+            query: strSQL,
+            pageSize: 1
+        });
+       
+        objPagedData.pageRanges.forEach(function(pageRange) {
+            //fetch
+            let objPage = objPagedData.fetch({ index: pageRange.index }).data;
+            // Map results to columns 
+            arrResults.push.apply(arrResults, objPage.asMappedResults());
+        });
+    
+        return arrResults;
     }
 
 
