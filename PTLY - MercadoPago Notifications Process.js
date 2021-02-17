@@ -355,6 +355,7 @@ function (record, search, https, runtime) {
         }
     }
 
+
     let updNSNotificationMP = (idNS, body, idPedido) => {
 
         let resp = { error: false, message: ``, idRecord: null}
@@ -388,6 +389,83 @@ function (record, search, https, runtime) {
 
                 if(!isEmpty(idRecord))
                     resp.idRecord = idRecord;
+                
+                return resp;
+            }
+        }
+        catch(e)
+        {
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            resp.error = true;
+            resp.message = `Excepción: ${JSON.stringify(e.message)}`;
+            return resp;
+        }
+    }
+
+
+    let updSO = (idNS, body, idPedido) => {
+
+        let resp = { error: false, message: ``, idRecord: null, soUpd: false}
+        const proceso = "PTLY - MercadoPago Notifications Process - updSO";
+
+        try
+        {
+            let soRecord = record.load({
+                type: record.Type.SALES_ORDER,
+                id: idPedido
+            });
+
+            if (!isEmpty(soRecord))
+            {
+                //MONTO DEL PAGO
+                let total_paid_amount = parseFloat(body.results[0].transaction_details.total_paid_amount,10);
+                log.debug('LINE 422- total_paid_amount: '+total_paid_amount);
+                soRecord.setValue({
+                    fieldId: 'custbody_ptly_mp_monto_total_pago',
+                    value: total_paid_amount
+                });
+
+                //MONTO COMISION
+                let fee_amount = parseFloat(body.results[0].fee_details[0].amount,10);
+                log.debug('LINE 430- fee_amount: '+fee_amount);
+                soRecord.setValue({
+                    fieldId: 'custbody_ptly_mp_monto_comision',
+                    value: fee_amount
+                });
+
+                //MEDIO DE PAGO
+                let payment_method_id = getPaymentMethod(body.results[0].payment_method_id);
+                log.debug('LINE 438- payment_method_id: '+payment_method_id);
+                soRecord.setValue({
+                    fieldId: 'custbody_ptly_mp_medio_pago',
+                    value: payment_method_id
+                });
+
+                //ESTADO DEL PAGO
+                let status = getPaymentStatus(body.results[0].status);
+                log.debug('LINE 446- status: '+status);
+                soRecord.setValue({
+                    fieldId: 'custbody_ptly_mp_estado_pago',
+                    value: status
+                });
+
+                //ID DEL PAGO
+                let idPayment = getPaymentStatus(body.results[0].id);
+                log.debug('LINE 454- idPayment: '+idPayment);
+                soRecord.setValue({
+                    fieldId: 'custbody_ptly_mp_id_pago',
+                    value: idPayment
+                });
+
+                let idRecord =  soRecord.save();
+
+                log.debug(proceso, 'SO actualizada ID: '+idRecord);
+
+                if(!isEmpty(idRecord))
+                {
+                    resp.idRecord = idRecord;
+                    resp.soUpd = true;
+                }
                 
                 return resp;
             }
