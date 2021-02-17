@@ -161,9 +161,7 @@ function (record, search, https, runtime) {
                    
                     try
                     {
-                        let resp = searchPaymentMP(data.config);
-
-                        log.debug(proceso,'LINE 166 - resp: '+JSON.stringify(resp));
+                        let resp = searchPaymentMP(data);
 
                         if (!isEmpty(resp.request))
                         {
@@ -371,10 +369,13 @@ function (record, search, https, runtime) {
 
             if (!isEmpty(newRecord))
             {
-                newRecord.setValue({
-                    fieldId: 'custrecord_ptly_mp_notific_so',
-                    value: idPedido
-                });
+                if (!isEmpty(idPedido))
+                {
+                    newRecord.setValue({
+                        fieldId: 'custrecord_ptly_mp_notific_so',
+                        value: idPedido
+                    });
+                }
 
                 newRecord.setValue({
                     fieldId: 'custrecord_ptly_mp_notific_det_mp',
@@ -400,7 +401,7 @@ function (record, search, https, runtime) {
         }
     }
 
-    let procesarRegMap = (objMap, urlSearchPayment) => {
+    let procesarRegMap = (objMap) => {
 
         let resp = { error: false, message: ``, obj: {}}
         const proceso = "PTLY - MercadoPago Notifications Process - procesarRegMap";
@@ -413,6 +414,7 @@ function (record, search, https, runtime) {
             obj.type = objMap.type;
             obj.id = objMap.id;
             obj.urlMPSearchPayment = `${objMap.config.servBuscarPago}?id=${objMap.id}`;
+            obj.config = objMap.config;
             resp.obj = obj;
 
             return resp;
@@ -510,25 +512,29 @@ function (record, search, https, runtime) {
             }
     }
 
-    let searchPaymentMP = (config) => {
+    let searchPaymentMP = (data) => {
 
         let resp = { error: false, message: ``, request: null}
         const proceso = "PTLY - MercadoPago Notifications Process - searchPaymentMP";
 
         try
         {
+            log.debug(proceso,'LINE 521 - data: '+JSON.stringify(data));
+
+            let token = `Bearer ${data.config.tokenMP}`
+
             let headers = {
-                'Authorization': config.tokenMP,
+                'Authorization': token,
                 'Content-Type':'application/json',
                 'Accept':'*/*'
             }
 
+            log.debug(proceso,'LINE 527 - headers: '+JSON.stringify(headers));
+
             let request = https.get({
-                url: config.servBuscarPago,
+                url: data.urlMPSearchPayment,
                 headers: headers
             }); 
-
-            log.debug(proceso,'request: '+JSON.stringify(request));
 
             resp.request = request;
 
