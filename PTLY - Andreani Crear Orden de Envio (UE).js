@@ -955,6 +955,13 @@ function(query, utilities, https, search, runtime, query, record) {
                 value: scriptParams.estadoProcError
             });
 
+            let idTransaction = record.save();
+
+            log.debug({
+                title: 'logError',
+                details: `LINE 961 - idTransaction: ${idTransaction}`
+            });
+
             return true;
         }
         catch(e)
