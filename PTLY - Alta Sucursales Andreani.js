@@ -252,7 +252,7 @@ function (record, search, https, runtime, query) {
 
             newRecord.setValue({
                 fieldId: 'externalid',
-                value: data.direccion.codigoPostal
+                value: `${data.codigo}-${data.direccion.codigoPostal}`
             });
 
             newRecord.setValue({
