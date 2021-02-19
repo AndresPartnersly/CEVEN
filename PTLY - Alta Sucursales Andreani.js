@@ -379,7 +379,7 @@ function (record, search, https, runtime, query) {
         let arraySS = [];
 
         let ssSucursal = search.load({
-            id: 'customsearch985'
+            id: 'customsearch_ptly_addr_form'
         })
 
         let ssIdFilter = search.createFilter({
