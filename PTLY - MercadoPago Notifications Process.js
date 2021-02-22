@@ -508,7 +508,7 @@ function (record, search, https, runtime, query) {
                     fee_perc  = (parseFloat(fee_amount,10) * parseFloat(100,10)) / total_paid_amount;
                 }
 
-                log.debug(proceso,`id SO: ${idPedido} - fee_amount:  + ${fee_amount} - fee_perc: ${fee_perc}`);
+                log.debug(proceso,`idSO: ${idPedido} - fee_amount:  ${fee_amount} - fee_perc: ${fee_perc}`);
 
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_monto_comision',
