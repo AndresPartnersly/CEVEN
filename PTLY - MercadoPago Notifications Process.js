@@ -44,16 +44,12 @@ function (record, search, https, runtime, query) {
                 if(!dataParams.error)
                 {
                     let accountId = runtime.accountId;
-                    log.debug(proceso, "LINE 46: " + accountId);
                     let config = getConfiguration(dataParams.subsidiary, accountId);
-                    log.debug(proceso, "LINE 48 - config: " + JSON.stringify(config));
                     if (config.existeConfig)
                     {
                         try
                         {
                             let resp = getNotificationsMP(config);
-
-                            log.debug(proceso,'LINE 55 - resp: '+JSON.stringify(resp));
 
                             if (!isEmpty(resp.request) && !resp.error)
                             {
@@ -61,14 +57,13 @@ function (record, search, https, runtime, query) {
                                 {
                                     let body = JSON.parse(resp.request.body);
 
-                                    log.debug(proceso,'LINE 63 - body: '+JSON.stringify(body));
+                                    log.debug(proceso,'Total notificaciones sin procesar: '+body.notifications.length);
                 
                                     for (let i=0; i < body.notifications.length; i++)
                                     {
                                         try
                                         {
                                             let resp = createNSNotificationMP(body.notifications[i], dataParams, config);
-                                            log.debug(proceso, 'LINE 70 - resp: '+JSON.stringify(resp));
                 
                                             if(!isEmpty(resp) && !resp.error)
                                             {
@@ -80,6 +75,10 @@ function (record, search, https, runtime, query) {
                                             log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
                                         }
                                     } 
+                                }
+                                else
+                                {
+                                    log.error(proceso, `Error al consultar notificaciones en servicio externo - Codigo de error HTTPS: ${resp.request.code}`);
                                 }
                             }
                         }
@@ -103,6 +102,8 @@ function (record, search, https, runtime, query) {
                 log.error(proceso, `No se pudo obtener información de los parametros del script`);
             }
 
+            log.debug(proceso,`Cantidad de registros a procesar: ${dataProcesar.length} - Data a procesar: ${JSON.stringify(dataProcesar)}`)
+
             return dataProcesar;
         }
         catch(err)
@@ -122,16 +123,20 @@ function (record, search, https, runtime, query) {
         try
         {
             let result = JSON.parse(context.value);
-            log.debug(proceso, 'Map - LINE 124 - result: '+JSON.stringify(result));
+            log.debug(proceso, 'Map - Datos a procesar: '+JSON.stringify(result));
 
             if (!isEmpty(result))
             {
                 let resp = procesarRegMap(result);
+
                 if (!isEmpty(resp) && !resp.error)
                 {
-                    log.debug(proceso, 'Map - LINE 131 - resp: '+JSON.stringify(resp));
                     let key = resp.obj.idMongo;
                     context.write(key, JSON.stringify(resp.obj));
+                }
+                else
+                {
+                    log.error(proceso, `Error al procesar notificación con ID: ${result.idMongo}`);        
                 }
             }
 
@@ -152,7 +157,7 @@ function (record, search, https, runtime, query) {
 
         try
         {
-            log.debug(proceso, 'Reduce - LINE 154 - context.key : ' + context.key);
+            log.debug(proceso, 'Reduce - Key : ' + context.key);
 
             if (!isEmpty(context.values) && context.values.length > 0)
             {
@@ -172,31 +177,40 @@ function (record, search, https, runtime, query) {
                                 {
                                     let body = JSON.parse(resp.request.body);
 
-                                    log.debug(proceso,'LINE 165 - body: '+JSON.stringify(body));
+                                    log.debug(proceso,'Data Payment MP: '+JSON.stringify(body));
 
-                                    let idInternoPedido = parseInt(body.results[0].external_reference);
-
-                                    if (!isEmpty(idInternoPedido))
+                                    if (body.results.length > 0)
                                     {
-                                        let resp = updNSNotificationMP(data.idNS, body, idInternoPedido);
-                                        let respSO = updSO(data, body, idInternoPedido);
-        
-                                        log.debug(proceso, 'LINE 183 - resp: '+JSON.stringify(resp));
-                                        log.debug(proceso, 'LINE 184 - respSO: '+JSON.stringify(respSO));
+                                        let idInternoPedido = parseInt(body.results[0].external_reference);
 
-                                        if (!isEmpty(resp) && !resp.error && !isEmpty(respSO) && respSO.soUpd)
+                                        if (!isEmpty(idInternoPedido))
                                         {
-                                            if(!isEmpty(resp.idRecord) && !isEmpty(respSO.idRecord))
+                                            let resp = updNSNotificationMP(data.idNS, body, idInternoPedido);
+                                            let respSO = updSO(data, body, idInternoPedido);
+
+                                            if (!isEmpty(resp) && !resp.error)
+                                                log.debug(proceso,`Notificación actualizada con información del Pago - ID: ${data.idNS}`);
+
+                                            if (!isEmpty(respSO) && respSO.soUpd)
+                                                log.debug(proceso,`Orden de venta actualizada con información del Pago - ID: ${idInternoPedido}`);
+
+                                            if (!isEmpty(resp) && !resp.error && !isEmpty(respSO) && respSO.soUpd)
                                             {
-                                                let obj = {};
-                                                obj.idMongo = data.idMongo;
-                                                obj.idNS = data.idNS;
-                                                obj.config = data.config;
-                                                respuesta.data = obj;
-                                                log.debug(proceso, 'LINE 195 - respuesta: '+JSON.stringify(respuesta));
-                                                context.write(context.key, respuesta);
+                                                if(!isEmpty(resp.idRecord) && !isEmpty(respSO.idRecord))
+                                                {
+                                                    let obj = {};
+                                                    obj.idMongo = data.idMongo;
+                                                    obj.idNS = data.idNS;
+                                                    obj.config = data.config;
+                                                    respuesta.data = obj;
+                                                    context.write(context.key, respuesta);
+                                                }
                                             }
                                         }
+                                    }
+                                    else
+                                    {
+                                        log.error(proceso, `La consulta a MercadoPago no devolvio data valida - URL: ${data.urlMPSearchPayment}`);    
                                     }
                                 }
                                 catch(e)
@@ -205,6 +219,10 @@ function (record, search, https, runtime, query) {
                                     respuesta.message = `Excepción: ${JSON.stringify(e.message)}`; 
                                     log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
                                 }
+                            }
+                            else
+                            {
+                                log.error(proceso, `Error al consultar los datos del pago en Mercadopago - Codigo de error HTTP: ${resp.request.code} - Detalles: ${JSON.stringify(resp.request)}`);
                             }
                         }
                     }
@@ -230,7 +248,7 @@ function (record, search, https, runtime, query) {
 
         try {
 
-            log.debug(proceso, 'LINE 222 - Inicio - Summarize - summary: '+JSON.stringify(summary));
+            log.debug(proceso, 'Inicio - Summarize - summary: '+JSON.stringify(summary));
 
             summary.output.iterator().each(function (key, value)
             {
@@ -242,13 +260,12 @@ function (record, search, https, runtime, query) {
                 return true;
             });
 
-            log.debug('LINE 234','dataProcesar: '+JSON.stringify(dataProcesar));
+            log.debug(proceso,'dataProcesar: '+JSON.stringify(dataProcesar));
 
             if (dataProcesar.length > 0)
             {
                 for (let i=0; i < dataProcesar.length; i++)
                 {
-                    log.debug('LINE 240',`dataProcesar[${i}].data.idMongo: ${dataProcesar[i].data.idMongo}`);
                     let body = {
                         idPayment: dataProcesar[i].data.idMongo
                     }
@@ -259,7 +276,11 @@ function (record, search, https, runtime, query) {
                     {
                         if (resp.request.code == 201)
                         {
-                            log.debug('LINE 251','Documento actualizado en MongoDB');
+                            log.debug(proceso,`Notificación actualizada en servicio externo de notificaciones - ID ${dataProcesar[i].data.idMongo}`);
+                        }
+                        else
+                        {
+                            log.error(proceso,`Error al actualizar notificación en externo de notificaciones - ID ${dataProcesar[i].data.idMongo} - Detalle: ${resp}`);
                         }
                     }
                 }
@@ -309,15 +330,29 @@ function (record, search, https, runtime, query) {
         try
         {
             let obj = {};
+            let newRecord;
+            let notifExist = notifexist(body._id);
 
-            let newRecord = record.create({
-                type: 'customrecord_ptly_mp_notific'
-            });
+            log.debug(proceso, 'notifExist: '+JSON.stringify(notifExist));
 
-            newRecord.setValue({
-                fieldId: 'externalid',
-                value: body._id
-            });
+            if (!notifExist.existe)
+            {
+                newRecord = record.create({
+                    type: 'customrecord_ptly_mp_notific'
+                });
+
+                newRecord.setValue({
+                    fieldId: 'externalid',
+                    value: body._id
+                });
+            }
+            else
+            {
+                newRecord = record.load({
+                    type: 'customrecord_ptly_mp_notific',
+                    id: notifExist.obj.idInterno
+                });
+            }
 
             newRecord.setValue({
                 fieldId: 'custrecord_ptly_mp_notific_type',
@@ -359,6 +394,36 @@ function (record, search, https, runtime, query) {
         }
     }
 
+    let notifexist = (extId) =>
+    {
+        let resp = { error: false, existe: false, message: ``, obj: {}}
+        const proceso = "PTLY - MercadoPago Notifications Process - notifexist";
+
+        let arrResults = [];
+
+        var strSQL = "SELECT \n CUSTOMRECORD_PTLY_MP_NOTIFIC.name AS nameRAW, CUSTOMRECORD_PTLY_MP_NOTIFIC.id AS idinterno \nFROM \n CUSTOMRECORD_PTLY_MP_NOTIFIC\nWHERE \n CUSTOMRECORD_PTLY_MP_NOTIFIC.externalid = '"+extId+"'\n";
+  
+        let objPagedData = query.runSuiteQLPaged({
+            query: strSQL,
+            pageSize: 1
+        });
+        
+        objPagedData.pageRanges.forEach(function(pageRange) {
+            //fetch
+            let objPage = objPagedData.fetch({ index: pageRange.index }).data;
+            // Map results to columns 
+            arrResults.push.apply(arrResults, objPage.asMappedResults());
+        });
+
+        if (arrResults.length > 0)
+        {
+            resp.obj.externalId = extId;
+            resp.obj.idInterno = arrResults[0].idinterno;
+            resp.existe = true;
+        }
+
+        return resp;
+    }
 
     let updNSNotificationMP = (idNS, body, idPedido) => {
 
@@ -399,9 +464,9 @@ function (record, search, https, runtime, query) {
         }
         catch(e)
         {
-            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)} - ID Registro: ${idNS}`);
             resp.error = true;
-            resp.message = `Excepción: ${JSON.stringify(e.message)}`;
+            resp.message = `Excepción: ${JSON.stringify(e.message)} - ID Registro: ${idNS}`;
             return resp;
         }
     }
@@ -426,7 +491,9 @@ function (record, search, https, runtime, query) {
 
                 //MONTO DEL PAGO
                 let total_paid_amount = parseFloat(body.results[0].transaction_details.total_paid_amount,10);
-                log.debug('LINE 422','total_paid_amount: '+total_paid_amount);
+
+                log.debug(proceso,`total_paid_amount: ${total_paid_amount}`);
+
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_monto_total_pago',
                     value: total_paid_amount
@@ -434,20 +501,32 @@ function (record, search, https, runtime, query) {
 
                 //MONTO COMISION
                 let fee_amount = 0.00;
+                let fee_perc = 0.00;
                 if (body.results[0].fee_details.length > 0)
                 {
                     fee_amount = parseFloat(body.results[0].fee_details[0].amount,10);
+                    fee_perc  = (parseFloat(fee_amount,10) * parseFloat(100,10)) / total_paid_amount;
                 }
-                log.debug('LINE 434','fee_amount: '+fee_amount);
+
+                log.debug(proceso,`id SO: ${idPedido} - fee_amount:  + ${fee_amount} - fee_perc: ${fee_perc}`);
+
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_monto_comision',
                     value: fee_amount
                 });
 
+                //PORCENTAJE COMISION
+                soRecord.setValue({
+                    fieldId: 'custbody_ptly_mp_porc_comision',
+                    value: fee_perc
+                });
+
                 //MEDIO DE PAGO
                 let payment_method_id = getPaymentMethod(body.results[0].payment_method_id, subsidiary);
                 let paymentmethod = payment_method_id[0].idpaymentmethod;
-                log.debug('LINE 442','- payment_method_id: '+JSON.stringify(payment_method_id));
+
+                log.debug(proceso,'PaymentMethod: '+JSON.stringify(payment_method_id));
+
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_medio_pago',
                     value: payment_method_id[0].idraw
@@ -455,29 +534,32 @@ function (record, search, https, runtime, query) {
 
                 //ESTADO DEL PAGO
                 let status = getPaymentStatus(body.results[0].status);
-                log.debug('LINE 450','status: '+JSON.stringify(status));
+
+                log.debug(proceso,'PaymentStatus: '+JSON.stringify(status));
+
                 soRecord.setValue({
                     fieldId: 'custbody_ptly_mp_estado_pago',
                     value: status[0].idraw
                 });
 
-                log.debug('LINE 463','data: '+JSON.stringify(data));
                 if (data.params.idStatusApprovPayment == status[0].idraw)
                 {
-                    log.debug('LINE 466','ENTRO - paymentmethod: '+paymentmethod);
+                    //METODO DE PAGO NETSUITE
                     soRecord.setValue({
                         fieldId: 'paymentmethod',
                         value: paymentmethod
                     });
-                }
 
-                //ID DEL PAGO
-                let idPayment = body.results[0].id;
-                log.debug('LINE 454','idPayment: '+JSON.stringify(idPayment));
-                soRecord.setValue({
-                    fieldId: 'custbody_ptly_mp_id_pago',
-                    value: idPayment
-                });
+                    //ID DEL PAGO
+                    let idPayment = body.results[0].id;
+
+                    soRecord.setValue({
+                        fieldId: 'custbody_ptly_mp_id_pago',
+                        value: idPayment
+                    });
+
+                    log.debug(procesarRegMap,`Pago Aprobado, se actualiza metodo de pago NetSuite e ID de Pago - paymentmethod: ${paymentmethod} - IdPayment: ${idPayment}`);
+                }
 
                 let idRecord =  soRecord.save({
                     enableSourcing: true,
@@ -497,7 +579,7 @@ function (record, search, https, runtime, query) {
         }
         catch(e)
         {
-            log.error(proceso, `Excepción: ${JSON.stringify(e.message)}`);
+            log.error(proceso, `Excepción: ${JSON.stringify(e.message)} ID SO: ${idPedido}`);
             resp.error = true;
             resp.message = `Excepción: ${JSON.stringify(e.message)}`;
             return resp;
@@ -590,13 +672,12 @@ function (record, search, https, runtime, query) {
                         'x-access-token':token
                     }
                     
-                    log.debug(proceso,'LINE 592 - headers: '+JSON.stringify(headers)+' - body: '+JSON.stringify(body)+' - url: '+config.servActNotif);
                     let request = https.post({
                         url: config.servActNotif,
                         headers: headers,
                         body: JSON.stringify(body)
                     }); 
-                    log.debug(proceso,'LINE 598 - request: '+JSON.stringify(request));
+
                     resp.request = request;
 
                     log.debug(proceso,'request: '+JSON.stringify(request));
@@ -624,8 +705,6 @@ function (record, search, https, runtime, query) {
 
         try
         {
-            log.debug(proceso,'LINE 521 - data: '+JSON.stringify(data));
-
             let token = `Bearer ${data.config.tokenMP}`
 
             let headers = {
@@ -633,8 +712,6 @@ function (record, search, https, runtime, query) {
                 'Content-Type':'application/json',
                 'Accept':'*/*'
             }
-
-            log.debug(proceso,'LINE 527 - headers: '+JSON.stringify(headers));
 
             let request = https.get({
                 url: data.urlMPSearchPayment,
