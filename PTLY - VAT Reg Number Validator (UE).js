@@ -35,81 +35,84 @@ function(error, search) {
 
         log.audit(process,'INICIO');
 
-        log.debug(process,'scriptContext: '+JSON.stringify(scriptContext)+' - scriptContext: '+ JSON.stringify(scriptContext));
-
-        const newRecord = scriptContext.newRecord;
-        const recId = newRecord.id;
-
-        let vatregnumber = newRecord.getValue({
-            fieldId: 'vatregnumber'
-        });
-
-        let nombreLegal = newRecord.getValue({
-            fieldId: 'custentity_l54_nombre_legal'
-        });
-
-        let companyname = newRecord.getValue({
-            fieldId: 'companyname'
-        });
-
-        log.debug(process, 'vatregnumber.length: '+vatregnumber.length+ ' -nombreLegal: '+nombreLegal + ' - companyname: '+companyname);
-
-        if (!isEmpty(vatregnumber))
+        if (scriptContext.type == scriptContext.UserEventType.CREATE || scriptContext.type == scriptContext.UserEventType.EDIT)
         {
-            let vatregnumberNew = limpiarTaxNumber(vatregnumber);
+            log.debug(process,'scriptContext: '+JSON.stringify(scriptContext)+' - scriptContext: '+ JSON.stringify(scriptContext));
 
-            let validTaxNumber = existeTaxNumber(vatregnumberNew, recId);
+            const newRecord = scriptContext.newRecord;
+            const recId = newRecord.id;
 
-            log.debug(process, 'recId: '+ recId +' - vatregnumber: '+vatregnumber + ' - validTaxNumber: ' + validTaxNumber + ' - vatregnumberNew: ' + vatregnumberNew);
-
-            newRecord.setValue({
-                fieldId: 'vatregnumber',
-                value: vatregnumberNew/*,
-                ignoreFieldChange: true*/
+            let vatregnumber = newRecord.getValue({
+                fieldId: 'vatregnumber'
             });
 
-            newRecord.setValue({
-                fieldId: 'custentity_l54_cuit_entity',
-                value: vatregnumberNew/*,
-                ignoreFieldChange: true*/
+            let nombreLegal = newRecord.getValue({
+                fieldId: 'custentity_l54_nombre_legal'
             });
 
-            if (!validTaxNumber)
+            let companyname = newRecord.getValue({
+                fieldId: 'companyname'
+            });
+
+            log.debug(process, 'vatregnumber.length: '+vatregnumber.length+ ' -nombreLegal: '+nombreLegal + ' - companyname: '+companyname);
+
+            if (!isEmpty(vatregnumber))
             {
-                let errorMessage = error.create({
-                    name: "Alerta",
-                    message: `VAT Reg Number ingresado ya existe en NetSuite: ${vatregnumberNew}, debe cambiarlo`,
-                    notifyOff: false
+                let vatregnumberNew = limpiarTaxNumber(vatregnumber);
+
+                let validTaxNumber = existeTaxNumber(vatregnumberNew, recId);
+
+                log.debug(process, 'recId: '+ recId +' - vatregnumber: '+vatregnumber + ' - validTaxNumber: ' + validTaxNumber + ' - vatregnumberNew: ' + vatregnumberNew);
+
+                newRecord.setValue({
+                    fieldId: 'vatregnumber',
+                    value: vatregnumberNew/*,
+                    ignoreFieldChange: true*/
                 });
 
-                throw(errorMessage);
+                newRecord.setValue({
+                    fieldId: 'custentity_l54_cuit_entity',
+                    value: vatregnumberNew/*,
+                    ignoreFieldChange: true*/
+                });
+
+                if (!validTaxNumber)
+                {
+                    let errorMessage = error.create({
+                        name: "Alerta",
+                        message: `VAT Reg Number ingresado ya existe en NetSuite: ${vatregnumberNew}, debe cambiarlo`,
+                        notifyOff: false
+                    });
+
+                    throw(errorMessage);
+                }
             }
-        }
 
-        if (!isEmpty(nombreLegal))
-        {
-            let nombreLegalNew = limpiarString(nombreLegal);
+            if (!isEmpty(nombreLegal))
+            {
+                let nombreLegalNew = limpiarString(nombreLegal);
 
-            log.debug(process, 'recId: '+ recId +' - nombreLegalNew: '+nombreLegalNew + ' - nombreLegalNew.length: ' + nombreLegalNew.length);
+                log.debug(process, 'recId: '+ recId +' - nombreLegalNew: '+nombreLegalNew + ' - nombreLegalNew.length: ' + nombreLegalNew.length);
 
-            newRecord.setValue({
-                fieldId: 'custentity_l54_nombre_legal',
-                value: nombreLegalNew/*,
-                ignoreFieldChange: true*/
-            });
-        }
+                newRecord.setValue({
+                    fieldId: 'custentity_l54_nombre_legal',
+                    value: nombreLegalNew/*,
+                    ignoreFieldChange: true*/
+                });
+            }
 
-        if (!isEmpty(companyname))
-        {
-            let companynameNew = limpiarString(companyname);
+            if (!isEmpty(companyname))
+            {
+                let companynameNew = limpiarString(companyname);
 
-            log.debug(process, 'recId: '+ recId +' - companynameNew: '+companynameNew + ' - companynameNew.length: ' + companynameNew.length);
+                log.debug(process, 'recId: '+ recId +' - companynameNew: '+companynameNew + ' - companynameNew.length: ' + companynameNew.length);
 
-            newRecord.setValue({
-                fieldId: 'companyname',
-                value: companynameNew/*,
-                ignoreFieldChange: true*/
-            });
+                newRecord.setValue({
+                    fieldId: 'companyname',
+                    value: companynameNew/*,
+                    ignoreFieldChange: true*/
+                });
+            }
         }
         log.audit(process,'FIN');
     }
