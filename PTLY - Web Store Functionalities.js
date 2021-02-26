@@ -73,6 +73,7 @@ define(['N/record', 'N/query', 'N/search'],
                         let customShippingCost = salesorder.getValue({ fieldId: 'custbody_ptly_ws_shipping_cost'});
                         let externalIdSucAndreani = salesorder.getValue({ fieldId: 'custbody_ptly_ws_zp_suc_andreani'});
                         let idShippingMethod = salesorder.getValue({ fieldId: 'shipmethod'});
+                        let trandate = salesorder.getValue({ fieldId: 'trandate'});
                         salesorder.setValue({fieldId: 'custbody_ctayorden', value: true});
                         salesorder.setValue({fieldId: 'custbody_flujo_aprobacion', value: 10});
 
@@ -176,19 +177,38 @@ define(['N/record', 'N/query', 'N/search'],
                                                     fieldId: 'shipaddress',
                                                     value: shipaddress
                                                 });
-
-                                                /*let idSO = salesorder.save();
-                                                log.debug(nameProcess, 'idSO: ' + idSO);*/
                                             }
                                         }
                                     }
                                 }
                             }
-                            /*else
+
+                            //SE ACTUALIZA EL VALOR DEL CAMPO OBLIGATORIO SUPPLY REQUIRED BY DATE
+                            let cantItems = salesorder.getLineCount({
+                                sublistId: 'item'
+                            });
+
+                            if (cantItems > 0)
                             {
-                                  let idSO = salesorder.save();
-                                  log.debug(nameProcess, 'idSO: ' + idSO);
-                            }*/
+                                for (let i = 0; i < cantItems; i++)
+                                {
+                                    salesorder.selectLine({
+                                        sublistId: 'item',
+                                        line: i
+                                    });
+
+                                    salesorder.setCurrentSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: 'requesteddate',
+                                        value: trandate,
+                                        ignoreFieldChange: false
+                                    });
+
+                                    salesorder.commitLine({
+                                        sublistId: 'item'
+                                    });
+                                }
+                            }
 
                             let idSO = salesorder.save();
                             log.debug(nameProcess, 'idSO: ' + idSO);
