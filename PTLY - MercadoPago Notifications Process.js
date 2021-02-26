@@ -558,7 +558,7 @@ function (record, search, https, runtime, query) {
                         value: idPayment
                     });
 
-                    log.debug(procesarRegMap,`Pago Aprobado, se actualiza metodo de pago NetSuite e ID de Pago - paymentmethod: ${paymentmethod} - IdPayment: ${idPayment}`);
+                    log.debug(proceso,`Pago Aprobado, se actualiza metodo de pago NetSuite e ID de Pago - paymentmethod: ${paymentmethod} - IdPayment: ${idPayment}`);
                 }
 
                 let idRecord =  soRecord.save({
