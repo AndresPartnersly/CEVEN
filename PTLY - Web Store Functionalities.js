@@ -73,7 +73,8 @@ define(['N/record', 'N/query', 'N/search'],
                         let customShippingCost = salesorder.getValue({ fieldId: 'custbody_ptly_ws_shipping_cost'});
                         let externalIdSucAndreani = salesorder.getValue({ fieldId: 'custbody_ptly_ws_zp_suc_andreani'});
                         let idShippingMethod = salesorder.getValue({ fieldId: 'shipmethod'});
-                        
+                        salesorder.setValue({fieldId: 'custbody_ctayorden', value: true});
+                        salesorder.setValue({fieldId: 'custbody_flujo_aprobacion', value: 10});
 
                         log.debug(nameProcess, 'Selected shipping cost on webstore: ' + customShippingCost);
 
