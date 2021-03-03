@@ -47,6 +47,8 @@ define(['N/record', 'N/query', 'N/search', 'N/runtime'],
                         let trandate = salesorder.getValue({ fieldId: 'trandate'});
                         let params = getParams();
 
+                        log.debug(nameProcess, 'Params: ' + JSON.stringify(params));
+
                         if (!isEmpty(params))
                         {
                             salesorder.setValue({fieldId: 'custbody_ctayorden', value: params.esCtaOrden});
@@ -330,11 +332,8 @@ define(['N/record', 'N/query', 'N/search', 'N/runtime'],
             let arrResults = [];
             let arrResultsAux = [];
     
-            //let strSQL = "SELECT \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.\"ID\" AS idinterno, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.name AS nombre, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_me AS idmetodoenvio, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_env_suc AS esenvsuc, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_b2c AS esb2c, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_b2b AS esb2b, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_nro AS nrocontrato \nFROM \n CUSTOMRECORD_PTLY_CONTR_ANDREANI\nWHERE \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.\"custrecord_ptly_contr_andreani_me\" = " + idShippingMethod +"\n";
-            //isinactive
             let strSQL = "SELECT \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.\"ID\" AS idinterno, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.name AS nombre, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_me AS idmetodoenvio, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_env_suc AS esenvsuc, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_b2c AS esb2c, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_b2b AS esb2b, \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.custrecord_ptly_contr_andreani_nro AS nrocontrato \nFROM \n CUSTOMRECORD_PTLY_CONTR_ANDREANI\nWHERE \n CUSTOMRECORD_PTLY_CONTR_ANDREANI.\"isinactive\" = 'F'\n";
             
-            log.debug('LINE 204','strSQL: '+strSQL);
             let objPagedData = query.runSuiteQLPaged({
                 query: strSQL,
                 pageSize: 1
@@ -347,20 +346,16 @@ define(['N/record', 'N/query', 'N/search', 'N/runtime'],
                 arrResults.push.apply(arrResults, objPage.asMappedResults());
             });
 
-            log.debug('LINE 219','arrResults: '+JSON.stringify(arrResults));
             if (arrResults.length > 0)
             {
                 for (let i = 0; i < arrResults.length; i++)
                 {
-                    log.debug('LINE 224','arrResults[i].idmetodoenvio: '+arrResults[i].idmetodoenvio);
                     let arreglo = [];
                     let arrayProcesar = arrResults[i].idmetodoenvio.split(", ");
 
-                    log.debug('LINE 219','arrayProcesar: '+JSON.stringify(arrayProcesar));
             
                     arreglo = arrayProcesar.filter(function(element)
                     {
-                        log.debug('LINE 227', 'elemnt: '+element+' - idShippingMethod: '+idShippingMethod);
                         if (element == idShippingMethod)
                         {
                             let objeto = {};
@@ -372,7 +367,6 @@ define(['N/record', 'N/query', 'N/search', 'N/runtime'],
                             objeto.esb2b = arrResults[i].esb2b;
                             objeto.nrocontrato = arrResults[i].nrocontrato;
                             arrResultsAux.push(objeto);
-                            log.debug('LINE 243', 'arrResultsAux: '+JSON.stringify(arrResultsAux));
                             i = arrResults.length;
                         }
                     });
@@ -465,7 +459,6 @@ define(['N/record', 'N/query', 'N/search', 'N/runtime'],
         {
             var strSQL = "SELECT \n CUSTOMRECORD_L54_SIC_CODIGO_PROVINCIA.\"ID\" AS idprovincia, \n CUSTOMRECORD_L54_SIC_CODIGO_PROVINCIA.name AS nameprovincia \nFROM \n CUSTOMRECORD_L54_SIC_CODIGO_PROVINCIA\nWHERE \n CUSTOMRECORD_L54_SIC_CODIGO_PROVINCIA.custrecord_l54_sic_codigo_prov_provincia = "+ state +"\n";
             var idProvincia = null;
-            log.debug('LINE 200','strSQL: '+strSQL);
        
             try
             {
