@@ -45,8 +45,13 @@ define(['N/record', 'N/query', 'N/search', 'N/runtime'],
                         let externalIdSucAndreani = salesorder.getValue({ fieldId: 'custbody_ptly_ws_zp_suc_andreani'});
                         let idShippingMethod = salesorder.getValue({ fieldId: 'shipmethod'});
                         let trandate = salesorder.getValue({ fieldId: 'trandate'});
-                        salesorder.setValue({fieldId: 'custbody_ctayorden', value: true});
-                        salesorder.setValue({fieldId: 'custbody_flujo_aprobacion', value: 10});
+                        let params = getParams();
+
+                        if (!isEmpty(params))
+                        {
+                            salesorder.setValue({fieldId: 'custbody_ctayorden', value: params.esCtaOrden});
+                            salesorder.setValue({fieldId: 'custbody_flujo_aprobacion', value: params.estadoFlujoAprob});
+                        }
 
                         log.debug(nameProcess, 'Selected shipping cost on webstore: ' + customShippingCost);
 
