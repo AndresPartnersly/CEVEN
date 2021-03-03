@@ -3,40 +3,11 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/record', 'N/query', 'N/search'],
+define(['N/record', 'N/query', 'N/search', 'N/runtime'],
 
-    function (record, query, search) {
+    function (record, query, search, runtime) {
 
         let nameProcess = 'PTLY - Web Store Functionalities'; //Process name for LOGS
-
-        function beforeSubmit(scriptContext) {
-
-            log.audit(nameProcess, 'beforeSubmit - INICIO del proceso - scriptContext: '+JSON.stringify(scriptContext));
-        
-            try
-            {
-                if (scriptContext.type == scriptContext.UserEventType.CREATE)
-                {
-                    let recType = scriptContext.newRecord.type;
-                    let recId = scriptContext.newRecord.id;
-        
-                    log.audit(nameProcess, 'recType: ' + recType + ' - recId: ' + recId);
-        
-                    let salesorder = scriptContext.newRecord;
-        
-                    if (!isEmpty(salesorder))
-                    {
-                        salesorder.setValue({fieldId: 'location', value: 230});
-                        salesorder.setValue({fieldId: 'custbody_ctayorden', value: true});
-                    }
-                }
-        
-            } catch (e) {
-                log.error(nameProcess, 'Netsuite Exception afterSubmit: ' + e.message);
-            }
-        
-            log.audit(nameProcess, 'afterSubmit - FIN del proceso');
-        }
 
         function afterSubmit(scriptContext) {
 
@@ -521,8 +492,23 @@ define(['N/record', 'N/query', 'N/search'],
         }
 
 
+        let getParams = () => {
+        
+            let response = { error: false, mensaje:'', contextocrear:'', contextomodificar:'' };
+            
+            try {
+                var currScript = runtime.getCurrentScript();
+                response.esCtaOrden = currScript.getParameter('custscript_ptly_ws_funtionalities_cta_or');
+                response.estadoFlujoAprob = currScript.getParameter('custscript_ptly_ws_funtionalities_fl_apr');
+            } catch (e) {
+                response.error = true;
+                response.mensaje = "Netsuite Error - Excepción: " + e.message;
+            }
+    
+            return response;
+        }
+
         return {
-            //beforeLoad: beforeSubmit,
             afterSubmit: afterSubmit
         };
 
