@@ -28,3 +28,5 @@ require(['N/query'], function(query) {
         });
     
 });
+
+`SELECT \n BUILTIN_RESULT.TYPE_STRING(paymentMethod.name) AS nameRAW /*{name#RAW}*/\nFROM \n paymentMethod, \n \"ACCOUNT\"\nWHERE \n paymentMethod.\"ACCOUNT\" = \"ACCOUNT\".\"ID\"(+)\n AND ((\"ACCOUNT\".custrecord_ptly_receipt_bank_transfer = 'T' AND paymentMethod.\"ID\" = 54`
